@@ -1,6 +1,6 @@
 jest.mock('expo-constants', () => ({
   __esModule: true,
-  default: { expoConfig: { extra: { androidCertSha1: 'ABCDEF0123456789ABCDEF0123456789ABCDEF01' } } },
+  default: { expoConfig: { extra: { androidCertSha1: 'ABCDEF0123456789ABCDEF0123456789ABCDEF01', androidCertSha1Release: '1111111111111111111111111111111111111111' } } },
 }));
 
 const { getNearbyVets, mapPlace, PlacesError } = require('../services/places');
@@ -35,6 +35,18 @@ describe('places', () => {
       location: { latitude: 6.2, longitude: -75.5 },
     });
     expect(v).toEqual({ id: 'p2', name: 'Vet Y', address: 'Cra 1 #2-3', rating: 4.6, reviews: 89, open: false, phone: '(604) 123 4567', lat: 6.2, lng: -75.5 });
+  });
+
+  test('X-Android-Cert usa el SHA-1 release cuando __DEV__ es false', async () => {
+    const prev = global.__DEV__;
+    global.__DEV__ = false;
+    try {
+      global.fetch.mockResolvedValue(okResponse([]));
+      await getNearbyVets(6.2, -75.5);
+      expect(global.fetch.mock.calls[0][1].headers['X-Android-Cert']).toBe('1111111111111111111111111111111111111111');
+    } finally {
+      global.__DEV__ = prev;
+    }
   });
 
   test('envía key, field mask, headers de restricción Android y el body correcto', async () => {

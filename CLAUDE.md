@@ -569,8 +569,23 @@ Seguir fases en orden. Confirmar criterio de pausa antes de avanzar.
 - [ ] Declarar en Play Console: URL de política (`/privacidad`) y de eliminación de cuenta (`/eliminar-cuenta`), y Seguridad de los datos (incluye ID de publicidad de Android de Firebase Analytics)
 - [ ] Firestore rules desplegadas
 - [ ] Restricción de API keys en Google Cloud Console
-- [ ] Build de release firmado (local con Gradle, o EAS si se decide)
+- [x] Build de release firmado local (2026-11-12, ver "Build de release firmado" abajo); falta el lado del dueño
 - [ ] Subir a Google Play (internal testing)
+
+### Build de release firmado (P3)
+- **Firma:** llave de subida `C:\dev\patitas-keys\patitas-upload.jks` (alias `patitas-upload`, RSA 2048), FUERA del repo. Las
+  contraseñas están en `%USERPROFILE%\.gradle\gradle.properties` (`PATITAS_UPLOAD_STORE_FILE/_STORE_PASSWORD/_KEY_ALIAS/_KEY_PASSWORD`).
+  El plugin `plugins/withReleaseSigning.js` (registrado en `app.json`, idempotente) inyecta el `signingConfig release` en
+  `android/app/build.gradle`; sin esas propiedades la build release cae a la firma debug con un aviso. No editar build.gradle a mano.
+- **Comando:** `cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a` (APK) y
+  `./gradlew bundleRelease ...` (AAB para Play). Tras cualquier `expo prebuild`: respaldar/restaurar `android/local.properties`.
+- **Places:** `services/places.js` envía `X-Android-Cert` = `extra.androidCertSha1` (debug) si `__DEV__`, o
+  `extra.androidCertSha1Release` (llave de subida) en release.
+- **APK release != firma debug:** instalarlo sobre la build debug obliga a desinstalarla (pierde datos locales).
+- **Pendiente del dueño:** (1) respaldar `C:\dev\patitas-keys\` y la contraseña en un gestor; (2) registrar SHA-1/SHA-256 de la
+  llave de subida en Firebase (app Android) y añadir el SHA-1 a la restricción de la API key de Places; (3) con Play App Signing la
+  firma final la pone Google: registrar también el SHA-1 de la "app signing key" de Play Console (Places y Google Sign-In);
+  (4) resto de Fase 7 (Firestore rules, CONTACT_EMAIL, fichas de Play).
 
 ---
 

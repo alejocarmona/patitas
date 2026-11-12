@@ -11,7 +11,11 @@ const FIELD_MASK =
   'places.nationalPhoneNumber,places.location';
 
 export const placesKey = () => process.env.EXPO_PUBLIC_PLACES_API_KEY || '';
-const certSha1 = () => Constants.expoConfig?.extra?.androidCertSha1 || '';
+// SHA-1 de la firma de la app: debug en desarrollo, llave de subida/release en builds de producción.
+export const certSha1 = () => {
+  const extra = Constants.expoConfig?.extra;
+  return (__DEV__ ? extra?.androidCertSha1 : extra?.androidCertSha1Release) || '';
+};
 
 export class PlacesError extends Error {
   constructor(code) {
