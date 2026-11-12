@@ -69,6 +69,9 @@ jest.mock('../services/analytics', () => ({
   setPetSpecies: jest.fn(),
   logEvent: jest.fn(),
 }));
+jest.mock('../services/tips', () => require('../test-helpers/tipsMock').servicesMock());
+jest.mock('../hooks/useSavedTips', () => require('../test-helpers/tipsMock').savedHookMock());
+jest.mock('expo-location', () => require('../test-helpers/locationMock'));
 jest.mock('expo-notifications', () => require('../test-helpers/notificationsMock'));
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')

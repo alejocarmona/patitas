@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { fonts, theme } from '../../constants/theme';
 
 // Encabezado de pantalla (reemplaza el degradado del prototipo por color sólido)
-export default function TopBar({ title, subtitle, color = theme.primary, onBack, right }) {
+export default function TopBar({ title, subtitle, color = theme.primary, onBack, right, children }) {
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -55,6 +55,7 @@ export default function TopBar({ title, subtitle, color = theme.primary, onBack,
           {subtitle}
         </Text>
       ) : null}
+      {children}
     </View>
   );
 }

@@ -126,6 +126,7 @@ export default function Cartilla() {
                   key={v.id}
                   vacuna={v}
                   petName={pet.name}
+                  onFindVet={() => router.push('/directorio')}
                   onEdit={() => router.push({ pathname: '/add-vacuna', params: { id: v.id } })}
                   onDelete={() => confirmDelete('vacuna', () => deleteCartillaItem(petId, 'vacunas', v.id).then(() => cancelItem('vacunas', v.id)).catch(() => Alert.alert('No se pudo eliminar')))}
                 />

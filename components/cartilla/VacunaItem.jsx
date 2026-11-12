@@ -15,7 +15,7 @@ const label = (status, petName) =>
         ? 'Próxima'
         : `${petName} necesita protección`;
 
-export default function VacunaItem({ vacuna, petName, onEdit, onDelete }) {
+export default function VacunaItem({ vacuna, petName, onEdit, onDelete, onFindVet }) {
   const c = COLOR[vacuna.status] ?? theme.success;
   return (
     <View
@@ -42,6 +42,15 @@ export default function VacunaItem({ vacuna, petName, onEdit, onDelete }) {
       </Text>
       {vacuna.notes ? (
         <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: theme.textMuted }}>{vacuna.notes}</Text>
+      ) : null}
+      {vacuna.status === 'vencida' && onFindVet ? (
+        <Pressable
+          onPress={onFindVet}
+          accessibilityRole="button"
+          style={{ alignSelf: 'flex-start', backgroundColor: theme.secondary, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 14, marginTop: 4 }}
+        >
+          <Text style={{ color: '#fff', fontSize: 12, fontFamily: fonts.bold }}>Encuentra veterinaria</Text>
+        </Pressable>
       ) : null}
       <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
         <Pressable onPress={onEdit} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

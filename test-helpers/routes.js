@@ -13,12 +13,13 @@ exports.build = () => {
     '(main)/add-peso': require('../app/(main)/add-peso').default,
     '(main)/add-medicina': require('../app/(main)/add-medicina').default,
     '(main)/edit-pet': require('../app/(main)/edit-pet').default,
+    '(main)/tip/[id]': require('../app/(main)/tip/[id]').default,
   };
   const tabs = {
     home: require('../app/(main)/(tabs)/home').default,
     cartilla: require('../app/(main)/(tabs)/cartilla').default,
     tips: require('../app/(main)/(tabs)/tips').default,
-    directorio: () => null,
+    directorio: require('../app/(main)/(tabs)/directorio').default,
   };
   const root = { _layout: () => <Stack screenOptions={{ headerShown: false }} /> };
 

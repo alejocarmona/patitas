@@ -14,6 +14,7 @@ export default function MainLayout() {
       <Stack.Screen name="add-peso" />
       <Stack.Screen name="add-medicina" />
       <Stack.Screen name="edit-pet" />
+      <Stack.Screen name="tip/[id]" />
     </Stack>
   );
 }

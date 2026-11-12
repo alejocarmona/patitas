@@ -37,6 +37,9 @@ jest.mock('@react-native-community/datetimepicker', () => ({
     open: jest.fn(({ onChange }) => onChange({ type: 'set' }, new Date(2026, 10, 11))),
   },
 }));
+jest.mock('../services/tips', () => require('../test-helpers/tipsMock').servicesMock());
+jest.mock('../hooks/useSavedTips', () => require('../test-helpers/tipsMock').savedHookMock());
+jest.mock('expo-location', () => require('../test-helpers/locationMock'));
 jest.mock('expo-notifications', () => require('../test-helpers/notificationsMock'));
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')

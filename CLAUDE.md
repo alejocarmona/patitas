@@ -232,7 +232,7 @@ la app, al volver a primer plano y cuando cambian los datos. Decisiones:
   texto previo (`services/reminderPrompt.js`). Si lo niega, el ítem se guarda y el formulario avisa
   que los recordatorios están apagados.
 
-### `tips/{tipId}` — solo lectura para usuarios, gestión via Firebase Console
+### `tips/{tipId}` — solo lectura para usuarios, gestión via `seed/tips.json` + `scripts/seed-tips.js` o Firebase Console
 
 ```json
 {
@@ -241,7 +241,7 @@ la app, al volver a primer plano y cuando cambian los datos. Decisiones:
   "detail": ["string"],
   "category": "Alimentación | Cuidado | Higiene | Salud",
   "emoji": "string",
-  "likes": "number",
+  "species": "gato | perro | todos",
   "publishedAt": "timestamp",
   "active": "boolean",
   "order": "number | null"
@@ -249,39 +249,35 @@ la app, al volver a primer plano y cuando cambian los datos. Decisiones:
 ```
 
 **Campos clave:**
-- `active`: inhabilitar tip sin eliminarlo. `false` = no aparece en app,
-  historial de interacciones permanece intacto. NUNCA eliminar documentos.
-- `publishedAt`: controla el orden de visualización. Puedes crear un tip hoy
-  con fecha futura para publicarlo después.
-- `order`: campo opcional para forzar posición manual independiente de fecha.
-  Si es `null`, se ordena por `publishedAt desc`.
-- `likes`: contador incrementado con `firestore.FieldValue.increment(1)` —
-  nunca sobrescribir directamente para evitar condiciones de carrera.
+- `species`: la app muestra los tips cuya `species` coincide con la de la mascota
+  (`pet.species` 'Gato'/'Perro' normalizado a minúsculas) o es `'todos'`. Una mascota de otra
+  especie (Conejo, Ave, Otro) solo ve los `'todos'`.
+- `active`: inhabilitar tip sin eliminarlo. `false` = no aparece en app. NUNCA eliminar documentos.
+- `publishedAt`: un tip con `publishedAt` futuro NO se muestra (se oculta en cliente), así que se
+  puede crear hoy con fecha futura para publicarlo después.
+- `order`: opcional, fuerza posición manual. Orden final en cliente: `order` ascendente (los que lo
+  traen primero) y luego `publishedAt` descendente.
+- **Sin likes en el MVP** (contadores falsos o vacíos son peor que ninguno). Futuro: botón de like
+  con `FieldValue.increment` + colección `users/{uid}/tipLikes/{tipId}` + regla que permita solo +1
+  en `likes` (o Cloud Function). Hoy no existe ni el campo `likes` ni la colección `tipLikes`.
 
-**Query de carga en app** (requiere índice compuesto `active` + `publishedAt`;
-Firestore muestra el enlace para crearlo la primera vez):
+**Query de carga en app** (`services/tips.js`, `get()` una vez por sesión, cacheado en `hooks/useTips.js`).
+Solo se filtra por `active`; el orden y el filtro de publicación futura se hacen en cliente
+(`utils/tips.js`), así NO hace falta índice compuesto:
 ```javascript
-import firestore from '@react-native-firebase/firestore';
-
-firestore()
-  .collection('tips')
-  .where('active', '==', true)
-  .orderBy('publishedAt', 'desc')
-  .get();
+getDocs(query(collection(db(), 'tips'), where('active', '==', true)));
 ```
 
-**Gestión de tips (sin panel de admin en MVP):**
-1. Redactar tip con Claude en claude.ai
-2. Entrar a Firebase Console → Firestore → colección `tips`
-3. Crear documento con ID automático
-4. Completar todos los campos
-5. Para inhabilitar: cambiar `active` a `false`
-6. Para despublicar temporalmente: cambiar `publishedAt` a fecha futura
-
-**Tips iniciales a poblar:** los 6 del prototipo `patitas-final.jsx`
-en la constante `TIPS_DATA`. Copiar `title`, `excerpt`, `detail`,
-`category`, `emoji`. Agregar `likes: 0`, `active: true`,
-`publishedAt: now()`, `order: null`.
+**Sembrado / gestión de tips (sin panel de admin en MVP):**
+- Contenido canónico: `seed/tips.json` (18 tips: 6 gato, 6 perro, 6 todos; 4 categorías).
+  Los tips de Salud terminan apuntando al veterinario y no traen dosis ni esquemas de vacunas universales.
+- `node scripts/seed-tips.js` (`--dry-run` para ver sin escribir). Como `tips` es `write:false` para clientes,
+  escribe vía la REST API de Firestore con un access token que obtiene del refresh token de `firebase login`
+  (`~/.config/configstore/firebase-tools.json`) y el cliente OAuth público de firebase-tools instalado
+  globalmente. Nunca imprime el token. IDs deterministas (slug del título) -> idempotente: si el tip existe
+  solo actualiza title/excerpt/detail/category/emoji/species y NO toca `active`/`publishedAt`/`order`.
+  Si no hay sesión: `firebase login` y reintentar.
+- Para inhabilitar un tip: `active: false` en la consola. Para despublicar temporalmente: `publishedAt` futuro.
 
 ### `users/{userId}/savedTips/{tipId}`
 ```json
@@ -290,23 +286,6 @@ en la constante `TIPS_DATA`. Copiar `title`, `excerpt`, `detail`,
   "savedAt": "timestamp"
 }
 ```
-
-### `users/{userId}/tipLikes/{tipId}` — evitar doble like
-```json
-{
-  "tipId": "string",
-  "likedAt": "timestamp"
-}
-```
-
-Cuando usuario da like:
-1. Verificar que `users/{uid}/tipLikes/{tipId}` no existe
-2. Si no existe: crear el documento + `FieldValue.increment(1)` en el tip
-3. Si existe: ignorar silenciosamente (idempotente)
-
-Nota: como `tips` es de solo escritura por consola, el incremento de `likes`
-desde el cliente requiere una regla específica (solo permitir cambiar `likes`
-en +1) o moverlo a una Cloud Function. Resolver en la Fase 4.
 
 ### Reglas de seguridad Firestore (`firestore.rules`)
 ```javascript
@@ -414,7 +393,17 @@ analytics().logEvent('notification_permission', { granted }); // boolean
 analytics().setUserProperty('pet_species', species);
 ```
 
-Eventos de tips y directorio se definen al implementar esas fases.
+Tips y directorio:
+```javascript
+analytics().logEvent('tip_opened', { category });        // al abrir el detalle
+analytics().logEvent('tip_saved', { category });
+analytics().logEvent('tip_unsaved');
+analytics().logEvent('directory_viewed', { results_count }); // bucket: '0' | '1-5' | '6-10' | '11+'
+analytics().logEvent('location_permission', { granted });    // boolean
+analytics().logEvent('vet_call');
+analytics().logEvent('vet_directions');
+```
+Nunca coordenadas ni nombres/IDs de lugares en analytics.
 
 ### Dónde ver los datos
 Firebase Console → Analytics → Events
@@ -431,68 +420,32 @@ Para depuración en tiempo real: Firebase Console → Analytics → DebugView
 
 ## 7. DIRECTORIO DE VETERINARIAS (P2)
 
-### Flujo
-1. Usuario abre Directorio
-2. `expo-location` solicita permiso `foreground`
-3. Si denegado → pantalla de estado con instrucciones
-4. Con permiso → `Location.getCurrentPositionAsync()`
-5. Llamar Places API (New) `places:searchNearby`
-6. Mostrar lista ordenada por distancia
-7. Llamar → `Linking.openURL('tel:NUMERO')`
-8. Cómo llegar → `Linking.openURL('https://maps.google.com/?q=DIRECCION')`
+### Flujo (implementado: `hooks/useNearbyVets.js`, `services/places.js`, `utils/geo.js`)
+1. Usuario abre Directorio. Si no hay `EXPO_PUBLIC_PLACES_API_KEY` -> "Directorio no disponible por ahora" (sin pedir ubicación ni llamar).
+2. `expo-location` pide permiso `foreground`. Denegado -> pantalla de estado con explicación y botón "Abrir ajustes" (`Linking.openSettings()`); al volver a la app se reintenta solo.
+3. `getCurrentPositionAsync` (precisión Balanced) -> `places:searchNearby` -> lista ordenada por distancia (haversine, en cliente).
+4. Llamar -> `tel:` solo con dígitos (se oculta si no hay teléfono). Cómo llegar -> `https://www.google.com/maps/dir/?api=1&destination=LAT,LNG&destination_place_id=PLACE_ID`.
+5. Estados: cargando, denegado, sin key, error de red/HTTP ("Reintentar"), vacío. Nunca se inventan veterinarias.
+6. Pie "Resultados de Google" (atribución requerida por la política de Places al no mostrar mapa).
 
 ### Places API (New)
-El crédito mensual de USD 200 ya no existe (cambió en marzo 2025: hoy hay
-cupos gratuitos por SKU). La Nearby Search legacy (`maps/api/place/nearbysearch`)
-no se habilita en proyectos nuevos. Usar **Places API (New)** con POST y
-**field mask** (solo se paga/consume lo pedido):
+El crédito mensual de USD 200 ya no existe (hoy hay cupos gratuitos por SKU). La Nearby Search legacy no se
+habilita en proyectos nuevos. Se usa **Places API (New)** con POST, `includedTypes: ['veterinary_care']`,
+`languageCode: 'es'`, `regionCode: 'CO'`, radio 5000 m, `maxResultCount: 20` y **field mask**
+(`places.id, displayName, formattedAddress, rating, userRatingCount, currentOpeningHours.openNow,
+nationalPhoneNumber, location`). Esos campos ponen la petición en el SKU **Nearby Search Enterprise**
+(1.000 llamadas gratis/mes): aceptable; fijar una cuota diaria máxima en Google Cloud Console.
 
-```javascript
-// services/places.js
-const KEY = process.env.EXPO_PUBLIC_PLACES_API_KEY;
+**Headers obligatorios con la key restringida a Android** (REST desde RN no los envía solo):
+`X-Goog-Api-Key`, `X-Goog-FieldMask`, `X-Android-Package: com.alejocarmona.patitas` y
+`X-Android-Cert: <SHA-1 del certificado de firma, hex mayúsculas SIN dos puntos>`. El SHA-1 vive en
+`app.json -> expo.extra.androidCertSha1` (no es secreto). Debug (`android/app/debug.keystore`):
+`5E8F16062EA3CD2C4A0D547876BAA6F38CABF625`. **Al firmar el release hay que cambiarlo por el SHA-1 del
+keystore de release** (y registrar ambos en la restricción de la key). La key se lee de
+`process.env.EXPO_PUBLIC_PLACES_API_KEY` (se inlinea al empaquetar: tras editar `.env` reiniciar Metro con `--clear`).
 
-export async function getNearbyVets(lat, lng, radius = 5000) {
-  const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': KEY,
-      'X-Goog-FieldMask':
-        'places.id,places.displayName,places.formattedAddress,places.rating,' +
-        'places.userRatingCount,places.currentOpeningHours.openNow,' +
-        'places.nationalPhoneNumber,places.location',
-    },
-    body: JSON.stringify({
-      includedTypes: ['veterinary_care'],
-      maxResultCount: 20,
-      languageCode: 'es',
-      locationRestriction: {
-        circle: { center: { latitude: lat, longitude: lng }, radius },
-      },
-    }),
-  });
-  if (!res.ok) throw new Error(`places_${res.status}`);
-  const data = await res.json();
-  return (data.places ?? []).map((p) => ({
-    id: p.id,
-    name: p.displayName?.text,
-    address: p.formattedAddress,
-    rating: p.rating,
-    reviews: p.userRatingCount,
-    open: p.currentOpeningHours?.openNow ?? null,
-    phone: p.nationalPhoneNumber ?? null,
-    lat: p.location.latitude,
-    lng: p.location.longitude,
-  }));
-}
-```
-
-Pedir `nationalPhoneNumber` sube el SKU de facturación; evaluar al implementar.
-La API key (`EXPO_PUBLIC_PLACES_API_KEY`) va en `.env`, restringida a Android
-(package + SHA-1) en Google Cloud Console antes de publicar.
-
-Cache: guardar resultado en estado + timestamp, no rellamar si
-han pasado menos de 10 minutos.
+**Cache:** en memoria 10 min (`hooks/useNearbyVets.js`, `utils/cache.js`); pull-to-refresh forzado como
+máximo cada 60 s (dentro de la ventana sirve el cache sin llamar).
 
 ---
 
@@ -574,22 +527,22 @@ Seguir fases en orden. Confirmar criterio de pausa antes de avanzar.
 - [x] CRUD vacunas con cálculo de status al leer
 - [x] CRUD registros de peso
 - [x] CRUD medicamentos
-- [ ] Botón "Encuentra veterinaria" en vacuna vencida → tab Directorio
+- [x] Botón "Encuentra veterinaria" en vacuna vencida → tab Directorio
 
 **Pausa cuando:** los tres subtabs funcionan con datos reales
 
 ### Fase 4 — Tips
-- [ ] Poblar Firestore con los 6 tips del prototipo via Console
-- [ ] Lista de tips con filtro por categoría
-- [ ] Tab "Guardados" con contador
-- [ ] Guardar/desguardar (subcolección savedTips)
-- [ ] Pantalla detalle de tip
+- [x] Poblar Firestore con 18 tips (`seed/tips.json` + `scripts/seed-tips.js`)
+- [x] Lista de tips con filtro por categoría
+- [x] Tab "Guardados" con contador
+- [x] Guardar/desguardar (subcolección savedTips)
+- [x] Pantalla detalle de tip
 
 ### Fase 5 — Directorio (P2)
-- [ ] Permiso de ubicación con manejo de denegación
-- [ ] Integrar Places API (New)
-- [ ] Lista veterinarias ordenada por distancia
-- [ ] Botones Llamar y Cómo llegar
+- [x] Permiso de ubicación con manejo de denegación
+- [x] Integrar Places API (New) (código y tests listos; llamada real pendiente de la key en `.env`)
+- [x] Lista veterinarias ordenada por distancia
+- [x] Botones Llamar y Cómo llegar
 
 ### Fase 6 — Perfil y pulido
 - [ ] Pantalla Perfil con ajustes y cerrar sesión con confirmación
@@ -639,7 +592,7 @@ npx expo install expo-router expo-linking expo-constants expo-status-bar \
   @react-native-google-signin/google-signin
 ```
 
-Para P2 se sumará `expo-location` (directorio). `expo-notifications` ya está instalada
+`expo-location` (directorio) ya está instalada (plugin en `app.json`; al añadirla `expo prebuild` regenera `android/` y borra `android/local.properties`: restaurarlo con `sdk.dir` y `cmake.dir`). `expo-notifications` ya está instalada
 (recordatorios locales).
 
 Tests: `jest-expo` + `jest`; `npm test`.
@@ -682,6 +635,8 @@ Antes de dar por buena cualquier versión, correr las 3 capas:
    con Firebase/auth/analytics mockeados. `OLD_LAYOUT=1 npx jest __tests__/navigation`
    carga el layout antiguo (pestañas con `href: null`) y debe FALLAR: prueba de que
    los tests cazan el bug. Todo bug nuevo reportado por el dueño añade aquí su test.
+   `__tests__/tips-flow.test.js` (tips por especie/categoría, guardar/desguardar + contador, detalle y volver, error) y
+   `__tests__/directorio-flow.test.js` (permiso denegado, lista por distancia, sin key, error + reintento, Llamar/Cómo llegar, cache 10 min, vacuna vencida -> directorio). Unitarias nuevas: `geo`, `tipsUtils`, `places` (headers, mapeo, errores), `cache`. Helpers: `test-helpers/tipsMock.js`, `locationMock.js`.
    `__tests__/reminders-flow.test.js`: vacuna sin próxima dosis ("Completa"), medicina con
    recordatorio (N llamadas a `scheduleNotificationAsync`), editar/borrar (cancela los IDs previos),
    permiso denegado y toque de notificación. Mockea `expo-notifications`
@@ -690,7 +645,7 @@ Antes de dar por buena cualquier versión, correr las 3 capas:
 3. **E2E en dispositivo (Maestro)** — `npm run test:e2e` (`maestro test .maestro`)
    con el Moto por USB y la app debug instalada, ya con sesión iniciada:
    `.maestro/navegacion.yaml`, `.maestro/formularios.yaml`, `.maestro/vacuna-completa.yaml` y
-   `.maestro/medicina-recordatorio.yaml` (los flujos que crean datos borran SOLO su ítem de prueba con
+   `.maestro/medicina-recordatorio.yaml`, `.maestro/tips.yaml` (filtra, detalle, guarda, Guardados, desguarda) y `.maestro/directorio.yaml` (diálogo de permiso; lista o estado sin key) (los flujos que crean datos borran SOLO su ítem de prueba con
    `below:`; la cartilla real del dueño tiene datos. Generan capturas con
    `takeScreenshot` para revisar barra inferior y teclado; usar `--test-output-dir`).
    Instalar Maestro CLI (Windows): descargar

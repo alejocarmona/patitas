@@ -1,0 +1,31 @@
+# Tips: abrir, filtrar, abrir detalle, guardar, ver Guardados y desguardar.
+# Requiere sesión iniciada, tips sembrados (scripts/seed-tips.js) y mascota Gato (Lirya).
+# Deja el estado como estaba: el tip guardado se desguarda al final.
+appId: com.alejocarmona.patitas
+---
+- launchApp:
+    clearState: false
+    stopApp: true
+- tapOn: "Tips"
+- assertVisible: "Tips para .*"
+- assertVisible: "Todos"
+- takeScreenshot: tips-lista
+# Filtro por categoría
+- tapOn: "Higiene"
+- assertVisible: "¿Con qué frecuencia bañar a un gato?"
+- assertNotVisible: "Señales de que tu gato necesita ir al veterinario"
+# Detalle (el filtro Higiene sigue activo: el tip queda a la vista sin scroll)
+- tapOn: "¿Con qué frecuencia bañar a un gato?"
+- assertVisible: "Los gatos dedican entre el 30%.*"
+- takeScreenshot: tips-detalle
+- tapOn: "Guardar tip"
+- assertVisible: "Guardado"
+- back
+- assertVisible: "Tips para .*"
+# El chip "Guardados (n)" queda fuera de pantalla en el scroll horizontal; el atajo del encabezado siempre se ve
+- tapOn: "Ver guardados"
+- assertVisible: "¿Con qué frecuencia bañar a un gato?"
+- takeScreenshot: tips-guardados
+# Limpieza: desguardar
+- tapOn: "Guardado"
+- assertVisible: "Sin tips guardados aún"

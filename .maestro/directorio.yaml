@@ -1,0 +1,17 @@
+# Directorio: abrir la pestaña, manejar el diálogo de permiso de ubicación y ver la lista
+# (con EXPO_PUBLIC_PLACES_API_KEY) o el estado "no disponible" (sin key).
+appId: com.alejocarmona.patitas
+---
+- launchApp:
+    clearState: false
+    stopApp: true
+- tapOn: "Vets"
+- runFlow:
+    when:
+      visible: "Mientras la app está en uso|Al usar la app|While using the app"
+    commands:
+      - tapOn: "Mientras la app está en uso|Al usar la app|While using the app"
+- extendedWaitUntil:
+    visible: "Resultados de Google|Directorio no disponible por ahora|Necesitamos tu ubicación|No pudimos cargar las veterinarias"
+    timeout: 20000
+- takeScreenshot: directorio
