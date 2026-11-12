@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { fonts, theme } from '../../constants/theme';
 
 export default function TipCard({ tip, saved, onOpen, onToggleSave }) {
@@ -25,8 +25,8 @@ export default function TipCard({ tip, saved, onOpen, onToggleSave }) {
         <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: theme.textMuted, lineHeight: 19 }}>{tip.excerpt}</Text>
       </Pressable>
       <View style={{ borderTopWidth: 1, borderTopColor: theme.border, paddingVertical: 10, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' }}>
-        <Pressable onPress={onToggleSave} accessibilityRole="button" accessibilityLabel={saved ? 'Quitar de guardados' : 'Guardar tip'} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40 }}>
-          <Feather name="bookmark" size={15} color={saved ? theme.primaryStrong : theme.textMuted} />
+        <Pressable onPress={onToggleSave} accessibilityRole="button" accessibilityLabel={saved ? 'Quitar de guardados' : 'Guardar tip'} accessibilityState={{ selected: !!saved }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40 }}>
+          <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={16} color={saved ? theme.primaryStrong : theme.textMuted} />
           <Text style={{ fontSize: 13, fontFamily: fonts.bold, color: saved ? theme.primaryStrong : theme.textMuted }}>{saved ? 'Guardado' : 'Guardar'}</Text>
         </Pressable>
         <Text style={{ marginLeft: 'auto', fontSize: 13, fontFamily: fonts.semibold, color: theme.textSubtle }}>Leer más →</Text>

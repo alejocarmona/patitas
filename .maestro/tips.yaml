@@ -24,7 +24,7 @@ appId: com.alejocarmona.patitas
 - assertVisible: "Este truco explota.*"
 - takeScreenshot: tips-detalle
 - tapOn: "Guardar tip"
-- assertVisible: "Guardado"
+- assertVisible: "Quitar de guardados"
 - back
 - assertVisible: "Tips para .*"
 # El chip "Guardados (n)" queda fuera de pantalla en el scroll horizontal; el atajo del encabezado siempre se ve

@@ -43,7 +43,8 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
 jest.mock('../services/analytics', () => ({ track: new Proxy({}, { get: () => () => {} }), setPetSpecies: jest.fn(), logEvent: jest.fn() }));
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
-  return { Feather: ({ name }) => <Text>{`icon-${name}`}</Text> };
+  const Icon = ({ name }) => <Text>{`icon-${name}`}</Text>;
+  return { Feather: Icon, Ionicons: Icon };
 });
 
 const legal = require('../constants/legal');

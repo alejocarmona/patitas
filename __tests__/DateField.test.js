@@ -8,7 +8,8 @@ jest.mock('@react-native-community/datetimepicker', () => ({
 }));
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
-  return { Feather: ({ name }) => <Text>{`icon-${name}`}</Text> };
+  const Icon = ({ name }) => <Text>{`icon-${name}`}</Text>;
+  return { Feather: Icon, Ionicons: Icon };
 });
 
 const DateField = require('../components/ui/DateField').default;

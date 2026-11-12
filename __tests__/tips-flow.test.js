@@ -33,7 +33,8 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 );
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
-  return { Feather: ({ name }) => <Text>{`icon-${name}`}</Text> };
+  const Icon = ({ name }) => <Text>{`icon-${name}`}</Text>;
+  return { Feather: Icon, Ionicons: Icon };
 });
 
 const tipsMock = require('../test-helpers/tipsMock');
@@ -122,7 +123,8 @@ describe('Tips', () => {
     expect(screen.getByText('✅ línea 2')).toBeTruthy();
 
     await press(screen.getByText('Guardar tip'));
-    expect(await screen.findByText('Guardado')).toBeTruthy();
+    expect(await screen.findByText('Quitar de guardados')).toBeTruthy();
+    expect(screen.getByText('✓ Está en tus guardados')).toBeTruthy();
 
     await press(screen.getByText('Atrás'));
     await waitFor(() => expect(screen).toHavePathname('/tips'));

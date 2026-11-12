@@ -53,7 +53,12 @@ export default function TipDetail() {
               </Text>
             ))}
             <View style={{ marginTop: 8 }}>
-              <Button label={saved ? 'Guardado' : 'Guardar tip'} variant={saved ? 'outline' : 'primary'} onPress={toggle} />
+              {saved ? (
+                <Text style={{ fontSize: 13, fontFamily: fonts.semibold, color: theme.success, textAlign: 'center', marginBottom: 8 }}>
+                  ✓ Está en tus guardados
+                </Text>
+              ) : null}
+              <Button label={saved ? 'Quitar de guardados' : 'Guardar tip'} variant={saved ? 'outline' : 'primary'} onPress={toggle} />
             </View>
           </>
         )}
