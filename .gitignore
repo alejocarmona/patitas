@@ -28,3 +28,6 @@ yarn-error.*
 # IDE
 .idea/
 .vscode/
+
+# Caché de deploy de Firebase
+.firebase/
