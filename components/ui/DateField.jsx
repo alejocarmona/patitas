@@ -54,7 +54,7 @@ export default function DateField({ label, value, onChangeText, error, maximumDa
           justifyContent: 'space-between',
         }}
       >
-        <Text style={{ fontSize: 15, fontFamily: fonts.semibold, color: current ? theme.text : theme.textLight }}>
+        <Text style={{ fontSize: 15, fontFamily: fonts.semibold, color: current ? theme.text : theme.textSubtle }}>
           {current ? formatDateEs(value) : 'Elegir fecha'}
         </Text>
         {clearable && current ? (

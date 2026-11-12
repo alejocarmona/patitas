@@ -11,7 +11,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.primary,
+        tabBarActiveTintColor: theme.primaryStrong,
         tabBarInactiveTintColor: theme.textMuted,
         tabBarLabelStyle: { fontFamily: fonts.bold, fontSize: 11 },
         tabBarStyle: {
@@ -37,7 +37,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="directorio"
-        options={{ title: 'Vets', tabBarIcon: ({ color, size }) => <Feather name="map-pin" size={size} color={color} /> }}
+        options={{ title: 'Veterinarias', tabBarIcon: ({ color, size }) => <Feather name="map-pin" size={size} color={color} /> }}
       />
     </Tabs>
   );

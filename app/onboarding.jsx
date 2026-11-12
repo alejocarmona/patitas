@@ -21,7 +21,7 @@ const STEPS = [
   },
   {
     emoji: '📍',
-    title: 'Veterinarios cerca\nde ti',
+    title: 'Veterinarias cerca\nde ti',
     sub: 'Encuentra el más cercano y llega directo desde la app.',
     bg: '#FFF8EE',
   },
@@ -86,7 +86,7 @@ export default function Onboarding() {
         <Pressable
           onPress={last ? () => finish(false) : () => setStep(step + 1)}
           style={{
-            backgroundColor: theme.primary,
+            backgroundColor: theme.primaryStrong,
             borderRadius: 16,
             paddingVertical: 16,
             alignItems: 'center',

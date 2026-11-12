@@ -1,22 +1,27 @@
 # Tips: abrir, filtrar, abrir detalle, guardar, ver Guardados y desguardar.
 # Requiere sesión iniciada, tips sembrados (scripts/seed-tips.js) y mascota Gato (Lirya).
-# Deja el estado como estaba: el tip guardado se desguarda al final.
+# Deja el estado como estaba: el tip guardado se desguarda al final. Usa un tip que el dueño NO tenga guardado
+# (el de "bañar a un gato" ya lo tiene guardado a propósito).
 appId: com.alejocarmona.patitas
 ---
 - launchApp:
     clearState: false
     stopApp: true
+# El arranque en frío del build debug (Metro) tarda; esperar a Inicio antes de tocar
+- extendedWaitUntil:
+    visible: "Hola.*"
+    timeout: 60000
 - tapOn: "Tips"
 - assertVisible: "Tips para .*"
 - assertVisible: "Todos"
 - takeScreenshot: tips-lista
 # Filtro por categoría
-- tapOn: "Higiene"
-- assertVisible: "¿Con qué frecuencia bañar a un gato?"
+- tapOn: "Cuidado"
+- assertVisible: "El truco del snack para cortar las uñas sin estrés"
 - assertNotVisible: "Señales de que tu gato necesita ir al veterinario"
-# Detalle (el filtro Higiene sigue activo: el tip queda a la vista sin scroll)
-- tapOn: "¿Con qué frecuencia bañar a un gato?"
-- assertVisible: "Los gatos dedican entre el 30%.*"
+# Detalle (el filtro Cuidado sigue activo: el tip queda a la vista sin scroll)
+- tapOn: "El truco del snack para cortar las uñas sin estrés"
+- assertVisible: "Este truco explota.*"
 - takeScreenshot: tips-detalle
 - tapOn: "Guardar tip"
 - assertVisible: "Guardado"
@@ -24,10 +29,10 @@ appId: com.alejocarmona.patitas
 - assertVisible: "Tips para .*"
 # El chip "Guardados (n)" queda fuera de pantalla en el scroll horizontal; el atajo del encabezado siempre se ve
 - tapOn: "Ver guardados"
-- assertVisible: "¿Con qué frecuencia bañar a un gato?"
+- assertVisible: "El truco del snack para cortar las uñas sin estrés"
 - takeScreenshot: tips-guardados
 # Limpieza: desguardar. No se exige la lista vacía: el dueño puede tener otros tips guardados.
 - tapOn:
     text: "Guardado"
-    below: "¿Con qué frecuencia bañar a un gato?"
-- assertNotVisible: "¿Con qué frecuencia bañar a un gato?"
+    below: "El truco del snack para cortar las uñas sin estrés"
+- assertNotVisible: "El truco del snack para cortar las uñas sin estrés"

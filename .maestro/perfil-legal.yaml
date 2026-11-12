@@ -5,6 +5,10 @@ appId: com.alejocarmona.patitas
 - launchApp:
     clearState: false
     stopApp: true
+# El arranque en frío del build debug (Metro) tarda; esperar a Inicio antes de tocar
+- extendedWaitUntil:
+    visible: "Hola.*"
+    timeout: 60000
 - tapOn:
     id: "perfil-btn"
 - assertVisible: "Mi perfil"

@@ -3,13 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const legal = require('../constants/legal');
 const { spawnSync } = require('child_process');
-const { buildAll, findPlaceholders, mdToHtml } = require('../scripts/build-legal');
+const { buildAll, findPlaceholders, mdToHtml, pendingPhone } = require('../scripts/build-legal');
 
 const h2 = (html) => [...html.matchAll(/<h2>([^<]*)<\/h2>/g)].map((m) => m[1].toLowerCase());
 
 describe('build-legal', () => {
   const email = 'hola@ejemplo.com';
-  const files = buildAll({ CONTACT_EMAIL: email, DIRECCION: 'Calle 1 # 2-3', TELEFONO: '3000000000' });
+  const files = buildAll({ CONTACT_EMAIL: email, TELEFONO: '3000000000' });
 
   test('genera las 4 páginas', () => {
     expect(Object.keys(files).sort()).toEqual(['eliminar-cuenta.html', 'index.html', 'privacidad.html', 'terminos.html']);
@@ -23,33 +23,37 @@ describe('build-legal', () => {
     expect(files['eliminar-cuenta.html']).toContain(`mailto:${email}`);
   });
 
-  test('el correo real está definido; DIRECCION y TELEFONO son marcadores hasta que el dueño los complete', () => {
+  test('el correo real está definido; el domicilio es solo la ciudad y el teléfono es el marcador del dueño', () => {
     const def = buildAll();
     expect(legal.CONTACT_EMAIL).toMatch(/^[^@\s{}]+@[^@\s{}]+\.[a-z]+$/);
+    expect(legal.DIRECCION).toBeUndefined();
+    expect(legal.TELEFONO).toBe('### #######');
     for (const html of Object.values(def)) expect(html).toContain(legal.CONTACT_EMAIL);
-    // Mientras sean marcadores, el build normal los lista y --strict falla.
-    const pending = findPlaceholders(def);
-    expect(pending).toEqual(expect.arrayContaining(['{{DIRECCION}}', '{{TELEFONO}}']));
-    expect(pending.every((p) => ['{{DIRECCION}}', '{{TELEFONO}}'].includes(p))).toBe(true);
+    // Ya no hay marcadores {{X}}: el teléfono pendiente es el literal con '#'.
+    expect(findPlaceholders(def)).toEqual([]);
+    expect(pendingPhone()).toBe(true);
+    expect(pendingPhone({ TELEFONO: '3001234567' })).toBe(false);
+    const pr = def['privacidad.html'];
+    expect(pr).toContain('<strong>Domicilio:</strong> Medellín, Colombia.');
+    expect(pr).toContain('<strong>Teléfono:</strong> ### #######.');
+    expect(pr).not.toContain('Domicilio y dirección');
   });
 
-  test('con DIRECCION y TELEFONO completos no queda ningún marcador y ambos aparecen en la política', () => {
+  test('con TELEFONO completo aparece en la política y ya no es pendiente', () => {
     expect(findPlaceholders(files)).toEqual([]);
-    expect(files['privacidad.html']).toContain('Calle 1 # 2-3');
     expect(files['privacidad.html']).toContain('3000000000');
+    expect(files['privacidad.html']).not.toContain('Calle 1');
   });
 
-  test('--strict falla (exit 1) mientras queden marcadores y el build normal avisa sin fallar', () => {
+  test('--strict falla (exit 1) mientras TELEFONO contenga "#" y el build normal avisa sin fallar', () => {
     const script = path.join(__dirname, '..', 'scripts', 'build-legal.js');
-    const pending = findPlaceholders(buildAll());
     const strict = spawnSync(process.execPath, [script, '--strict'], { encoding: 'utf8' });
     const normal = spawnSync(process.execPath, [script], { encoding: 'utf8' });
-    if (pending.length) {
+    if (pendingPhone()) {
       expect(strict.status).toBe(1);
-      expect(strict.stderr).toContain('{{DIRECCION}}');
-      expect(strict.stderr).toContain('{{TELEFONO}}');
+      expect(strict.stderr).toContain('TELEFONO');
       expect(normal.status).toBe(0);
-      expect(normal.stderr).toContain('{{DIRECCION}}');
+      expect(normal.stderr).toContain('TELEFONO');
     } else {
       expect(strict.status).toBe(0);
     }

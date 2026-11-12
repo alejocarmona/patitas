@@ -5,7 +5,7 @@
     "scheme": "patitas",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.alejocarmona.patitas",
@@ -21,9 +21,8 @@
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FF6B35",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       }
     },
     "plugins": [
@@ -31,10 +30,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 288,
           "resizeMode": "contain",
-          "backgroundColor": "#FDF6F0"
+          "backgroundColor": "#FF6B35"
         }
       ],
       "@react-native-firebase/app",
@@ -52,7 +51,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-monochrome.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#FF6B35",
           "defaultChannel": "recordatorios"
         }
@@ -61,6 +60,13 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Patitas usa tu ubicación para mostrarte las veterinarias más cercanas."
+        }
+      ],
+      "expo-web-browser",
+      [
+        "./plugins/withNativeAccent",
+        {
+          "color": "#2D4A3E"
         }
       ]
     ],

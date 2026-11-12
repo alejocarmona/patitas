@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/ui/Button';
 import Field from '../components/ui/Field';
 import { fonts, theme } from '../constants/theme';
 import { URL_PRIVACIDAD, URL_TERMINOS } from '../constants/legal';
+import { openLegalUrl } from '../services/browser';
 import {
   authErrorMessage,
   loginWithEmail,
@@ -14,8 +15,7 @@ import {
   resetPassword,
 } from '../services/auth';
 
-const openLegal = (url) =>
-  Linking.openURL(url).catch(() => Alert.alert('No se pudo abrir el enlace', 'Revisa tu conexión e inténtalo de nuevo.'));
+const openLegal = (url) => openLegalUrl(url);
 
 // mode: 'choose' | 'login' | 'register' | 'reset'
 export default function Login() {
@@ -180,19 +180,19 @@ export default function Login() {
             />
             {mode === 'login' && (
               <Pressable onPress={() => go('reset')} style={{ alignItems: 'center', paddingVertical: 4 }}>
-                <Text style={{ color: theme.primary, fontSize: 13, fontFamily: fonts.bold }}>¿Olvidaste tu contraseña?</Text>
+                <Text style={{ color: theme.primaryStrong, fontSize: 13, fontFamily: fonts.bold }}>¿Olvidaste tu contraseña?</Text>
               </Pressable>
             )}
             {mode !== 'register' ? (
               <Pressable onPress={() => go('register')} style={{ alignItems: 'center', paddingVertical: 4 }}>
                 <Text style={{ color: theme.textMuted, fontSize: 13, fontFamily: fonts.semibold }}>
-                  ¿No tienes cuenta? <Text style={{ color: theme.primary, fontFamily: fonts.bold }}>Regístrate</Text>
+                  ¿No tienes cuenta? <Text style={{ color: theme.primaryStrong, fontFamily: fonts.bold }}>Regístrate</Text>
                 </Text>
               </Pressable>
             ) : (
               <Pressable onPress={() => go('login')} style={{ alignItems: 'center', paddingVertical: 4 }}>
                 <Text style={{ color: theme.textMuted, fontSize: 13, fontFamily: fonts.semibold }}>
-                  ¿Ya tienes cuenta? <Text style={{ color: theme.primary, fontFamily: fonts.bold }}>Ingresa</Text>
+                  ¿Ya tienes cuenta? <Text style={{ color: theme.primaryStrong, fontFamily: fonts.bold }}>Ingresa</Text>
                 </Text>
               </Pressable>
             )}
@@ -202,13 +202,13 @@ export default function Login() {
           </View>
         )}
 
-        <Text style={{ textAlign: 'center', fontSize: 12, color: theme.textLight, fontFamily: fonts.regular, marginTop: 28 }}>
+        <Text style={{ textAlign: 'center', fontSize: 12, color: theme.textSubtle, fontFamily: fonts.regular, marginTop: 28 }}>
           Al continuar aceptas los{' '}
-          <Text accessibilityRole="link" onPress={() => openLegal(URL_TERMINOS)} style={{ color: theme.primary, fontFamily: fonts.semibold }}>
+          <Text accessibilityRole="link" onPress={() => openLegal(URL_TERMINOS)} style={{ color: theme.primaryStrong, fontFamily: fonts.semibold }}>
             Términos
           </Text>{' '}
           y la{' '}
-          <Text accessibilityRole="link" onPress={() => openLegal(URL_PRIVACIDAD)} style={{ color: theme.primary, fontFamily: fonts.semibold }}>
+          <Text accessibilityRole="link" onPress={() => openLegal(URL_PRIVACIDAD)} style={{ color: theme.primaryStrong, fontFamily: fonts.semibold }}>
             Política de privacidad
           </Text>
         </Text>

@@ -2,9 +2,10 @@ import { Pressable, Text, View } from 'react-native';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Feather } from '@expo/vector-icons';
 import { fonts, theme } from '../../constants/theme';
-import { parseTime, toTimeString } from '../../utils/reminders';
+import { formatTime12, parseTime, toTimeString } from '../../utils/reminders';
 
-// Selector de hora con el reloj nativo. El valor es un string 'HH:mm' (24 h, hora local).
+// Selector de hora con el reloj nativo. El valor es un string 'HH:mm' (24 h, hora local);
+// se muestra y se elige en formato de 12 h (a. m. / p. m.).
 export default function TimeField({ label, value, onChangeText, error, testID }) {
   const t = parseTime(value);
 
@@ -14,7 +15,7 @@ export default function TimeField({ label, value, onChangeText, error, testID })
     DateTimePickerAndroid.open({
       value: base,
       mode: 'time',
-      is24Hour: true,
+      is24Hour: false,
       onChange: (event, date) => {
         if (event.type === 'set' && date) onChangeText(toTimeString(date));
       },
@@ -54,8 +55,8 @@ export default function TimeField({ label, value, onChangeText, error, testID })
           justifyContent: 'space-between',
         }}
       >
-        <Text style={{ fontSize: 15, fontFamily: fonts.semibold, color: t ? theme.text : theme.textLight }}>
-          {t ? value : 'Elegir hora'}
+        <Text style={{ fontSize: 15, fontFamily: fonts.semibold, color: t ? theme.text : theme.textSubtle }}>
+          {t ? formatTime12(value) : 'Elegir hora'}
         </Text>
         <Feather name="clock" size={18} color={theme.textMuted} />
       </Pressable>

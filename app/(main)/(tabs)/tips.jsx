@@ -51,7 +51,7 @@ export default function Tips() {
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <TopBar
         title={`Tips para ${pet.name}`}
-        subtitle="Toca un tip para leerlo completo"
+        subtitle={cat === GUARDADOS ? 'Tus tips guardados' : 'Toca un tip para leerlo completo'}
         right={
           <Pressable
             onPress={() => { setSaveError(false); setCat(GUARDADOS); }}
@@ -64,7 +64,7 @@ export default function Tips() {
           </Pressable>
         }
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 16 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 16, paddingHorizontal: 20 }} style={{ marginHorizontal: -20 }}>
           {['Todos', ...CATEGORIES].map((c) => (
             <CategoryChip key={c} label={c} active={cat === c} onPress={() => { setSaveError(false); setCat(c); }} />
           ))}
@@ -90,8 +90,8 @@ export default function Tips() {
         ) : cat === GUARDADOS && list.length === 0 ? (
           <EmptyState
             emoji="🔖"
-            title="Sin tips guardados aún"
-            subtitle="Guarda los consejos que más te sirvan para tenerlos siempre a mano."
+            title="Aún no guardas tips"
+            subtitle="Toca Guardar en uno para tenerlo aquí."
             actionLabel="Ver todos los tips"
             onAction={() => setCat('Todos')}
           />

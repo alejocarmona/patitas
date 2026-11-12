@@ -5,6 +5,10 @@ appId: com.alejocarmona.patitas
 - launchApp:
     clearState: false
     stopApp: true
+# El arranque en frío del build debug (Metro) tarda; esperar a Inicio antes de tocar
+- extendedWaitUntil:
+    visible: "Hola.*"
+    timeout: 60000
 - assertVisible: "Editar"
 - tapOn: "Editar"
 - assertVisible: "Guardar cambios"
@@ -19,24 +23,30 @@ appId: com.alejocarmona.patitas
 - assertVisible: "Cartilla digital"
 - tapOn: "Agregar vacuna"
 - assertVisible: "Guardar vacuna"
-- tapOn: "Panleucopenia"
+- tapOn: "Otra"
+- tapOn: "Nombre de la vacuna"
+- inputText: "ZZ Prueba"
+- hideKeyboard
 - tapOn: "¿Cuándo se la pusieron a .*"
 - tapOn: "(?i)aceptar|ok"
 - tapOn: "Próxima dosis.*"
 - tapOn: "(?i)aceptar|ok"
+- scrollUntilVisible:
+    element: "Guardar vacuna"
+- scroll
 - tapOn: "Guardar vacuna"
 - extendedWaitUntil:
     visible: "Cartilla digital"
     timeout: 10000
-- assertVisible: "Panleucopenia"
+- assertVisible: "ZZ Prueba"
 - assertVisible: "Eliminar"
 # Limpieza: borra SOLO la vacuna de prueba (la cartilla real tiene más datos)
 - scrollUntilVisible:
     element:
       text: "Eliminar"
-      below: "Panleucopenia"
+      below: "ZZ Prueba"
 - tapOn:
     text: "Eliminar"
-    below: "Panleucopenia"
+    below: "ZZ Prueba"
 - tapOn: "Eliminar"
-- assertNotVisible: "Panleucopenia"
+- assertNotVisible: "ZZ Prueba"

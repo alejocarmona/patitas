@@ -11,7 +11,9 @@ function ActionButton({ label, onPress, filled }) {
       style={{
         flex: 1,
         alignItems: 'center',
-        paddingVertical: 10,
+        paddingVertical: 14,
+        minHeight: 48,
+        justifyContent: 'center',
         borderRadius: 12,
         backgroundColor: filled ? theme.secondary : 'transparent',
         borderWidth: 1.5,
@@ -25,7 +27,7 @@ function ActionButton({ label, onPress, filled }) {
 
 export default function VetCard({ vet }) {
   const tel = telUrl(vet.phone);
-  const openColor = vet.open ? theme.success : theme.danger;
+  const openColor = vet.open ? theme.success : theme.textMuted;
   return (
     <View style={{ backgroundColor: '#fff', borderRadius: 20, borderWidth: 1.5, borderColor: theme.border, padding: 16, gap: 8, elevation: 1 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>

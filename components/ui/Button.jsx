@@ -11,7 +11,7 @@ export default function Button({
   disabled = false,
   full = true,
 }) {
-  const base = color ?? (variant === 'danger' ? theme.danger : theme.primary);
+  const base = color ?? (variant === 'danger' ? theme.danger : theme.primaryStrong);
   const outline = variant === 'outline';
   const off = disabled || loading;
   return (

@@ -4,6 +4,10 @@ appId: com.alejocarmona.patitas
 - launchApp:
     clearState: false
     stopApp: true
+# El arranque en frío del build debug (Metro) tarda; esperar a Inicio antes de tocar
+- extendedWaitUntil:
+    visible: "Hola.*"
+    timeout: 60000
 - takeScreenshot: 01-inicio-barra-inferior
 - tapOn: "Editar"
 - assertVisible: "Fecha de nacimiento"
@@ -30,4 +34,11 @@ appId: com.alejocarmona.patitas
 - takeScreenshot: 04-teclado-add-vacuna
 - hideKeyboard
 - back
+# Hay cambios sin guardar (eligió "Otra"): la app pregunta antes de salir
+- assertVisible: "¿Descartar cambios?"
+- takeScreenshot: 05-descartar-cambios
+- tapOn: "(?i)seguir editando"
+- assertVisible: "Guardar vacuna"
+- back
+- tapOn: "(?i)descartar"
 - assertVisible: "Cartilla digital"

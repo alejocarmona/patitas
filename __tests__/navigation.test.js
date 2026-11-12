@@ -16,7 +16,7 @@ jest.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ user: { uid: 'u1', displayName: 'Alejo C' }, pet: mockPet, onboardingSeen: true, loading: false }),
 }));
 jest.mock('../hooks/usePet', () => ({ usePet: () => mockPet }));
-jest.mock('../hooks/useVacunas', () => ({ useVacunas: () => ({ vacunas: [], loading: false }) }));
+jest.mock('../hooks/useVacunas', () => ({ useVacunas: () => require('../test-helpers/vacunasMock').hookResult([]) }));
 jest.mock('../hooks/usePeso', () => ({ usePeso: () => ({ pesos: [], loading: false }) }));
 jest.mock('../hooks/useMedicinas', () => ({ useMedicinas: () => ({ medicinas: [], loading: false }) }));
 jest.mock('../services/firestore', () => ({

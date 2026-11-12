@@ -1,0 +1,80 @@
+# Vacuna por dosis más reciente: una dosis vieja VENCIDA y una nueva -> la tarjeta queda con el estado
+# de la nueva y la vieja pasa a "Historial" (sin estado). Crea y borra SOLO "ZZ Historial".
+# Requiere sesión iniciada y que hoy no sea día 1 o 2 del mes (usa los días anteriores del calendario).
+appId: com.alejocarmona.patitas
+---
+- launchApp:
+    clearState: false
+    stopApp: true
+# El arranque en frío del build debug (Metro) tarda; esperar a Inicio antes de tocar
+- extendedWaitUntil:
+    visible: "Hola.*"
+    timeout: 60000
+- evalScript: ${output.hace2 = String(new Date(Date.now() - 2 * 86400000).getDate())}
+- evalScript: ${output.hace1 = String(new Date(Date.now() - 1 * 86400000).getDate())}
+- tapOn: "Cartilla"
+- assertVisible: "Cartilla digital"
+- tapOn: "Agregar vacuna"
+- tapOn: "Otra"
+- tapOn: "Nombre de la vacuna"
+- inputText: "ZZ Historial"
+- hideKeyboard
+# Dosis vieja: aplicada hace 2 días, próxima ayer (=> vencida)
+- tapOn: "¿Cuándo se la pusieron a .*"
+- tapOn: "${output.hace2}"
+- tapOn: "(?i)aceptar|ok"
+- tapOn: "Próxima dosis.*"
+- tapOn: "${output.hace1}"
+- tapOn: "(?i)aceptar|ok"
+- scrollUntilVisible:
+    element: "Guardar vacuna"
+- scroll
+- tapOn: "Guardar vacuna"
+- extendedWaitUntil:
+    visible: "Cartilla digital"
+    timeout: 10000
+- assertVisible: "ZZ Historial"
+- assertVisible: "Vencida"
+- assertVisible: "Ya se la pusieron"
+- takeScreenshot: historial-1-vencida
+# "Ya se la pusieron": abre add-vacuna con el nombre precargado y hoy; sin próxima dosis -> "Completa"
+- tapOn:
+    id: "ya-se-la-pusieron"
+    below: "ZZ Historial"
+- assertVisible: "Guardar vacuna"
+- scrollUntilVisible:
+    element: "Guardar vacuna"
+- scroll
+- takeScreenshot: historial-2-precargada
+- tapOn: "Guardar vacuna"
+- extendedWaitUntil:
+    visible: "Cartilla digital"
+    timeout: 10000
+# La tarjeta toma el estado de la dosis NUEVA; la vencida queda en el historial
+- assertVisible: "ZZ Historial"
+- assertVisible: "Completa"
+- assertNotVisible: "Vencida"
+- scrollUntilVisible:
+    element: "Historial \\(1 dosis anterior\\)"
+- scroll
+- tapOn: "Historial \\(1 dosis anterior\\)"
+- assertVisible: "Aplicada: .*"
+- takeScreenshot: historial-3-con-historial
+# Limpieza: borra la dosis nueva (tarjeta) y luego la vieja, que queda como tarjeta vencida
+- scrollUntilVisible:
+    element:
+      text: "Eliminar"
+      below: "ZZ Historial"
+- tapOn:
+    text: "Eliminar"
+    below: "ZZ Historial"
+- tapOn: "Eliminar"
+- scrollUntilVisible:
+    element: "ZZ Historial"
+    direction: UP
+- takeScreenshot: historial-4-queda-la-vencida
+- tapOn:
+    text: "Eliminar"
+    below: "ZZ Historial"
+- tapOn: "Eliminar"
+- assertNotVisible: "ZZ Historial"

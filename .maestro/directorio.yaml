@@ -5,7 +5,11 @@ appId: com.alejocarmona.patitas
 - launchApp:
     clearState: false
     stopApp: true
-- tapOn: "Vets"
+# El arranque en frío del build debug (Metro) tarda; esperar a Inicio antes de tocar
+- extendedWaitUntil:
+    visible: "Hola.*"
+    timeout: 60000
+- tapOn: "Veterinarias"
 - runFlow:
     when:
       visible: "Mientras la app está en uso|Al usar la app|While using the app"

@@ -5,6 +5,10 @@ appId: com.alejocarmona.patitas
 - launchApp:
     clearState: false
     stopApp: true
+# El arranque en frío del build debug (Metro) tarda; esperar a Inicio antes de tocar
+- extendedWaitUntil:
+    visible: "Hola.*"
+    timeout: 60000
 - tapOn: "Cartilla"
 - tapOn: "Medicinas"
 - tapOn: "Agregar medicina"
@@ -15,9 +19,13 @@ appId: com.alejocarmona.patitas
 - tapOn: "Ej: 1 tableta, 2 ml"
 - inputText: "1 tableta"
 - hideKeyboard
-# Frecuencia por defecto: cada 8 horas, primera toma 08:00
+# Frecuencia por defecto: cada 8 horas, primera toma 8:00 a. m. (resumen legible)
+- scrollUntilVisible:
+    element: "Recordatorios: cada 8 horas desde las 8:00 a. m., sin fecha de fin"
+- takeScreenshot: medicina-resumen
 - scrollUntilVisible:
     element: "Guardar medicina"
+- scroll
 - tapOn: "Guardar medicina"
 # Primera vez: texto previo de Patitas y luego el diálogo del sistema (ambos opcionales)
 - tapOn:

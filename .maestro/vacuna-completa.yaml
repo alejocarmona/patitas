@@ -1,33 +1,41 @@
 # Mejoras 1 y 2: vacuna SIN próxima dosis -> queda "Completa". La fecha de aplicación trae hoy por defecto.
-# Requiere sesión iniciada. No toca las vacunas existentes: crea y borra solo "Panleucopenia".
+# Requiere sesión iniciada. No toca las vacunas existentes: crea y borra solo "ZZ Completa".
 appId: com.alejocarmona.patitas
 ---
 - launchApp:
     clearState: false
     stopApp: true
+# El arranque en frío del build debug (Metro) tarda; esperar a Inicio antes de tocar
+- extendedWaitUntil:
+    visible: "Hola.*"
+    timeout: 60000
 - tapOn: "Cartilla"
 - assertVisible: "Cartilla digital"
 - tapOn: "Agregar vacuna"
 - assertVisible: "Guardar vacuna"
 - assertVisible: "¿Cuándo se la pusieron a .*"
 - assertVisible: "Próxima dosis.*opcional.*"
-- tapOn: "Panleucopenia"
+- tapOn: "Otra"
+- tapOn: "Nombre de la vacuna"
+- inputText: "ZZ Completa"
+- hideKeyboard
 # La próxima dosis NO se toca: debe poder guardarse vacía
 - scrollUntilVisible:
     element: "Guardar vacuna"
+- scroll
 - tapOn: "Guardar vacuna"
 - extendedWaitUntil:
     visible: "Cartilla digital"
     timeout: 10000
-- assertVisible: "Panleucopenia"
+- assertVisible: "ZZ Completa"
 - assertVisible: "Completa"
 # Limpieza: borra SOLO la vacuna de prueba (la cartilla real tiene más datos)
 - scrollUntilVisible:
     element:
       text: "Eliminar"
-      below: "Panleucopenia"
+      below: "ZZ Completa"
 - tapOn:
     text: "Eliminar"
-    below: "Panleucopenia"
+    below: "ZZ Completa"
 - tapOn: "Eliminar"
-- assertNotVisible: "Panleucopenia"
+- assertNotVisible: "ZZ Completa"

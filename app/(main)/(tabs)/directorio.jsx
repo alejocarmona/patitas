@@ -44,7 +44,7 @@ export default function Directorio() {
             {vets.map((v) => (
               <VetCard key={v.id} vet={v} />
             ))}
-            <Text style={{ fontSize: 11, fontFamily: fonts.regular, color: theme.textLight, textAlign: 'center', marginTop: 8 }}>
+            <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: theme.textSubtle, textAlign: 'center', marginTop: 8 }}>
               Resultados de Google
             </Text>
           </>

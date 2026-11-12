@@ -1,4 +1,4 @@
-<!-- BORRADOR pendiente de revisión del dueño. No es asesoría legal. Puntos a confirmar antes de publicar: (1) completar DIRECCION y TELEFONO en constants/legal.js; (2) región de Firestore us-east1 en la consola; (3) que el formulario de Seguridad de los datos de Google Play coincida con esta política; (4) la configuración de retención de Google Analytics en la consola de Firebase (14 meses); (5) volver a generar las páginas con npm run build:legal; (6) confirmar en Analytics → Configuración de la cuenta → Data sharing settings que el intercambio de datos con Google esté desactivado -->
+<!-- BORRADOR pendiente de revisión del dueño. No es asesoría legal. Puntos a confirmar antes de publicar: (1) completar TELEFONO en constants/legal.js (el domicilio es solo la ciudad, decisión del dueño); (2) región de Firestore us-east1 en la consola; (3) que el formulario de Seguridad de los datos de Google Play coincida con esta política; (4) la configuración de retención de Google Analytics en la consola de Firebase (14 meses); (5) volver a generar las páginas con npm run build:legal; (6) confirmar en Analytics → Configuración de la cuenta → Data sharing settings que el intercambio de datos con Google esté desactivado -->
 # Política de privacidad y tratamiento de datos personales
 
 Última actualización: {{LAST_UPDATED_ES}}
@@ -9,7 +9,7 @@
 
 - **Responsable del tratamiento:** {{RESPONSABLE_NOMBRE}}, persona natural.
 - **Ciudad:** {{RESPONSABLE_CIUDAD}}.
-- **Domicilio y dirección:** {{DIRECCION}}.
+- **Domicilio:** {{RESPONSABLE_CIUDAD}}.
 - **Teléfono:** {{TELEFONO}}.
 - **Correo para consultas, reclamos y solicitudes:** [{{CONTACT_EMAIL}}](mailto:{{CONTACT_EMAIL}}).
 
@@ -152,4 +152,4 @@ Te informaremos los cambios importantes en la app o por correo antes de aplicarl
 
 ## 13. Contacto
 
-{{RESPONSABLE_NOMBRE}} · {{RESPONSABLE_CIUDAD}} · {{DIRECCION}} · {{TELEFONO}} · [{{CONTACT_EMAIL}}](mailto:{{CONTACT_EMAIL}})
+{{RESPONSABLE_NOMBRE}} · {{RESPONSABLE_CIUDAD}} · {{TELEFONO}} · [{{CONTACT_EMAIL}}](mailto:{{CONTACT_EMAIL}})

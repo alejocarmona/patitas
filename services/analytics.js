@@ -70,6 +70,7 @@ export const track = {
   locationPermission: (granted) => logEvent('location_permission', { granted: !!granted }),
   vetCall: () => logEvent('vet_call'),
   vetDirections: () => logEvent('vet_directions'),
+  contactOpened: () => logEvent('contact_opened'),
   accountDeleted: () => logEvent('account_deleted'),
 };
 

@@ -8,7 +8,7 @@ jest.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ user: { uid: 'u1', displayName: 'Alejo C' }, pet: mockPet, onboardingSeen: true, loading: false }),
 }));
 jest.mock('../hooks/usePet', () => ({ usePet: () => mockPet }));
-jest.mock('../hooks/useVacunas', () => ({ useVacunas: () => ({ vacunas: [], loading: false }) }));
+jest.mock('../hooks/useVacunas', () => ({ useVacunas: () => require('../test-helpers/vacunasMock').hookResult([]) }));
 jest.mock('../hooks/usePeso', () => ({ usePeso: () => ({ pesos: [], loading: false }) }));
 jest.mock('../hooks/useMedicinas', () => ({ useMedicinas: () => ({ medicinas: [], loading: false }) }));
 jest.mock('../services/firestore', () => ({
@@ -106,7 +106,7 @@ describe('Tips', () => {
     expect(screen.queryByText('Gato higiene')).toBeNull();
 
     await press(screen.getByLabelText('Quitar de guardados'));
-    await waitFor(() => expect(screen.getByText('Sin tips guardados aún')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Aún no guardas tips')).toBeTruthy());
     expect(screen.getByText('🔖 Guardados (0)')).toBeTruthy();
     expect(track.tipUnsaved).toHaveBeenCalledTimes(1);
     await press(screen.getByText('Ver todos los tips'));

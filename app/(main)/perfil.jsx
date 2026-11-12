@@ -7,28 +7,38 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import DeleteAccountModal from '../../components/perfil/DeleteAccountModal';
 import { fonts, theme } from '../../constants/theme';
-import { URL_PRIVACIDAD, URL_TERMINOS } from '../../constants/legal';
+import { CONTACT_EMAIL, URL_PRIVACIDAD, URL_TERMINOS } from '../../constants/legal';
+import { contactUrl } from '../../utils/contact';
+import { track } from '../../services/analytics';
 import { useAuth } from '../../hooks/useAuth';
 import { authErrorMessage, saveAnalyticsPreference, signOut } from '../../services/auth';
 import { authProviderOf } from '../../utils/authProvider';
 import { deleteAccount } from '../../services/accountDeletion';
+import { openLegalUrl } from '../../services/browser';
 
 function LegalRow({ label, url, testID }) {
   return (
     <Pressable
       testID={testID}
       accessibilityRole="link"
-      onPress={() =>
-        Linking.openURL(url).catch(() =>
-          Alert.alert('No se pudo abrir el enlace', 'Revisa tu conexión e inténtalo de nuevo.')
-        )
-      }
-      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }}
+      onPress={() => openLegalUrl(url)}
+      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 48 }}
     >
       <Text style={{ fontSize: 15, fontFamily: fonts.semibold, color: theme.text }}>{label}</Text>
       <Feather name="external-link" size={18} color={theme.textMuted} />
     </Pressable>
   );
+}
+
+async function openContact() {
+  track.contactOpened();
+  try {
+    const url = contactUrl();
+    if (!(await Linking.canOpenURL(url))) throw new Error('no-mail-app');
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert('Escríbenos', `No pudimos abrir tu correo. Escríbenos a ${CONTACT_EMAIL}`);
+  }
 }
 
 export default function Perfil() {
@@ -93,31 +103,56 @@ export default function Perfil() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
-      <TopBar title="Mi perfil" subtitle="Tu cuenta y la de tu mascota" onBack={() => router.back()} />
+      <TopBar
+        title="Mi perfil"
+        subtitle="Tu cuenta y la de tu mascota"
+        onBack={() => (router.canGoBack() ? router.back() : router.replace('/home'))}
+      />
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
         <Card style={{ gap: 4 }}>
           <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, textTransform: 'uppercase' }}>Cuenta</Text>
           <Text style={{ fontSize: 16, fontFamily: fonts.extrabold, color: theme.text }}>{user?.displayName || 'Sin nombre'}</Text>
           <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: theme.textMuted }}>{user?.email}</Text>
         </Card>
-        {pet ? <Button label={`Editar perfil de ${pet.name}`} onPress={() => router.push('/edit-pet')} variant="outline" /> : null}
-        <Button label="Cerrar sesión" onPress={confirmSignOut} variant="danger" />
+        {pet ? <Button label={`Editar perfil de ${pet.name}`} onPress={() => router.push('/edit-pet')} variant="outline" color={theme.secondary} /> : null}
+        <Button label="Cerrar sesión" onPress={confirmSignOut} variant="outline" color={theme.text} />
 
         <Card style={{ gap: 6 }}>
           <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, textTransform: 'uppercase' }}>Privacidad</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <Pressable
+            onPress={() => toggleStats(!stats)}
+            accessible={false}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 48 }}
+          >
             <Text style={{ flex: 1, fontSize: 15, fontFamily: fonts.semibold, color: theme.text }}>Compartir estadísticas de uso</Text>
             <Switch
               testID="switch-estadisticas"
               accessibilityLabel="Compartir estadísticas de uso"
               value={stats}
               onValueChange={toggleStats}
-              trackColor={{ true: theme.primary }}
+              thumbColor="#FFFFFF"
+              trackColor={{ true: theme.secondary, false: theme.switchOff }}
             />
-          </View>
+          </Pressable>
           <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: theme.textMuted }}>
             Eventos de uso sin tu nombre, tu correo ni el nombre de tu mascota. Puedes cambiarlo cuando quieras.
           </Text>
+        </Card>
+
+        <Card style={{ gap: 0 }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, textTransform: 'uppercase' }}>Ayuda</Text>
+          <Pressable
+            testID="escribenos"
+            accessibilityRole="link"
+            onPress={openContact}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 56, gap: 12 }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontFamily: fonts.semibold, color: theme.text }}>Escríbenos</Text>
+              <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: theme.textMuted }}>Dudas, ideas o problemas con la app</Text>
+            </View>
+            <Feather name="mail" size={18} color={theme.textMuted} />
+          </Pressable>
         </Card>
 
         <Card style={{ gap: 0 }}>

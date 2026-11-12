@@ -3,7 +3,7 @@
 // constants/legal.js (única fuente de la identidad legal). No despliega nada.
 //
 //   npm run build:legal            -> escribe public/
-//   node scripts/build-legal.js --strict   -> falla (exit 1) si queda algún marcador {{X}} (correo, dirección, teléfono)
+//   node scripts/build-legal.js --strict   -> falla (exit 1) si queda algún marcador {{X}} (correo) o si TELEFONO contiene '#'
 const fs = require('fs');
 const path = require('path');
 const legal = require('../constants/legal');
@@ -35,7 +35,6 @@ function tokens(L) {
     RESPONSABLE_NOMBRE: L.RESPONSABLE_NOMBRE,
     RESPONSABLE_CIUDAD: L.RESPONSABLE_CIUDAD,
     CONTACT_EMAIL: L.CONTACT_EMAIL,
-    DIRECCION: L.DIRECCION,
     TELEFONO: L.TELEFONO,
     LAST_UPDATED_ES: formatDateEs(L.LAST_UPDATED),
     LAST_UPDATED: L.LAST_UPDATED,
@@ -196,7 +195,7 @@ function buildAll(overrides = {}) {
   return files;
 }
 
-// Marcadores {{X}} que quedan en el HTML generado (p. ej. DIRECCION/TELEFONO sin completar).
+// Marcadores {{X}} que quedan en el HTML generado (p. ej. el correo sin completar).
 function findPlaceholders(files) {
   const found = new Set();
   for (const html of Object.values(files)) {
@@ -205,10 +204,17 @@ function findPlaceholders(files) {
   return [...found].sort();
 }
 
+// El teléfono pendiente es un marcador literal con '#' (p. ej. '### #######'): no es {{X}}, pero
+// tampoco es publicable.
+function pendingPhone(L = legal) {
+  return typeof L.TELEFONO === 'string' && L.TELEFONO.includes('#');
+}
+
 function main() {
   const strict = process.argv.includes('--strict');
   const files = buildAll();
   const left = findPlaceholders(files);
+  if (pendingPhone()) left.push(`TELEFONO (${legal.TELEFONO})`);
   if (left.length) {
     const msg = `AVISO: quedan marcadores sin completar: ${left.join(', ')}. Edita constants/legal.js antes de publicar.`;
     if (strict) {
@@ -225,4 +231,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { buildAll, mdToHtml, replaceTokens, formatDateEs, findPlaceholders };
+module.exports = { pendingPhone, buildAll, mdToHtml, replaceTokens, formatDateEs, findPlaceholders };

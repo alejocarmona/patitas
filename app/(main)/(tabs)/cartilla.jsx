@@ -15,6 +15,8 @@ import { useMedicinas } from '../../../hooks/useMedicinas';
 import { deleteCartillaItem, updateCartillaItem } from '../../../services/firestore';
 import { track } from '../../../services/analytics';
 import { cancelItem } from '../../../services/reminders';
+import { formatDateEs } from '../../../utils/vacunaStatus';
+import { formatKg } from '../../../utils/weight';
 
 const TABS = [
   { key: 'vacunas', label: 'Vacunas' },
@@ -22,8 +24,9 @@ const TABS = [
   { key: 'medicinas', label: 'Medicinas' },
 ];
 
-function confirmDelete(what, onConfirm) {
-  Alert.alert(`Eliminar ${what}`, 'Esta acción no se puede deshacer.', [
+// `question` dice QUÉ se borra (p. ej. "¿Eliminar Antirrábica del 27 Nov 2026?")
+function confirmDelete(question, onConfirm) {
+  Alert.alert(question, 'Esta acción no se puede deshacer.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Eliminar', style: 'destructive', onPress: onConfirm },
   ]);
@@ -45,7 +48,7 @@ function Chart({ pesos }) {
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10, height: 90 }}>
         {values.map((v, i) => (
           <View key={data[i].id} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-            <Text style={{ fontSize: 10, fontFamily: fonts.bold, color: theme.secondary, marginBottom: 2 }}>{v}</Text>
+            <Text style={{ fontSize: 10, fontFamily: fonts.bold, color: theme.secondary, marginBottom: 2 }}>{formatKg(v)}</Text>
             <View style={{ width: '100%', height: 14 + ((v - min) / span) * 50, backgroundColor: theme.secondary, borderRadius: 6 }} />
           </View>
         ))}
@@ -60,7 +63,7 @@ export default function Cartilla() {
   const params = useLocalSearchParams();
   const [tab, setTab] = useState(TABS.some((t) => t.key === params.tab) ? params.tab : 'vacunas');
   const petId = pet?.id;
-  const { vacunas, loading: lv } = useVacunas(petId);
+  const { vacunas, groups, latests, loading: lv } = useVacunas(petId);
   const { pesos, loading: lp } = usePeso(petId);
   const { medicinas, loading: lm } = useMedicinas(petId);
 
@@ -69,7 +72,7 @@ export default function Cartilla() {
     if (TABS.some((t) => t.key === params.tab)) setTab(params.tab);
   }, [params.tab]);
 
-  const hasOverdue = vacunas.some((v) => v.status === 'vencida');
+  const hasOverdue = latests.some((v) => v.status === 'vencida');
   const loadingAll = lv || lp || lm;
 
   useEffect(() => {
@@ -98,9 +101,9 @@ export default function Cartilla() {
                 alignItems: 'center',
                 paddingVertical: 10,
                 borderRadius: 12,
-                backgroundColor: on ? theme.primary : '#fff',
+                backgroundColor: on ? theme.secondary : '#fff',
                 borderWidth: 1.5,
-                borderColor: on ? theme.primary : theme.border,
+                borderColor: on ? theme.secondary : theme.border,
               }}
             >
               <Text style={{ fontSize: 13, fontFamily: fonts.bold, color: on ? '#fff' : theme.textMuted }}>{t.label}</Text>
@@ -111,7 +114,7 @@ export default function Cartilla() {
 
       <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 32 }}>
         {loading ? (
-          <ActivityIndicator color={theme.primary} style={{ marginTop: 32 }} />
+          <ActivityIndicator color={theme.secondary} style={{ marginTop: 32 }} />
         ) : tab === 'vacunas' ? (
           <>
             {vacunas.length === 0 ? (
@@ -121,14 +124,19 @@ export default function Cartilla() {
                 subtitle={`Registra la primera vacuna de ${pet.name} para tener su cartilla siempre a la mano.`}
               />
             ) : (
-              vacunas.map((v) => (
+              groups.map((g) => (
                 <VacunaItem
-                  key={v.id}
-                  vacuna={v}
+                  key={g.key}
+                  group={g}
                   petName={pet.name}
                   onFindVet={() => router.push('/directorio')}
-                  onEdit={() => router.push({ pathname: '/add-vacuna', params: { id: v.id } })}
-                  onDelete={() => confirmDelete('vacuna', () => deleteCartillaItem(petId, 'vacunas', v.id).then(() => cancelItem('vacunas', v.id)).catch(() => Alert.alert('No se pudo eliminar')))}
+                  onRenew={() => router.push({ pathname: '/add-vacuna', params: { renewName: g.latest.name } })}
+                  onEdit={(v) => router.push({ pathname: '/add-vacuna', params: { id: v.id } })}
+                  onDelete={(v) =>
+                    confirmDelete(`¿Eliminar ${v.name} del ${formatDateEs(v.appliedDate)}?`, () =>
+                      deleteCartillaItem(petId, 'vacunas', v.id).then(() => cancelItem('vacunas', v.id)).catch(() => Alert.alert('No se pudo eliminar'))
+                    )
+                  }
                 />
               ))
             )}
@@ -145,7 +153,7 @@ export default function Cartilla() {
                   <PesoItem
                     key={p.id}
                     peso={p}
-                    onDelete={() => confirmDelete('registro', () => deleteCartillaItem(petId, 'pesos', p.id).catch(() => Alert.alert('No se pudo eliminar')))}
+                    onDelete={() => confirmDelete(`¿Eliminar el peso de ${formatKg(p.value)} kg del ${formatDateEs(p.date)}?`, () => deleteCartillaItem(petId, 'pesos', p.id).catch(() => Alert.alert('No se pudo eliminar')))}
                   />
                 ))}
               </>
@@ -163,7 +171,7 @@ export default function Cartilla() {
                   medicina={m}
                   onToggle={() => updateCartillaItem(petId, 'medicinas', m.id, { active: !m.active }).catch(() => Alert.alert('No se pudo actualizar'))}
                   onEdit={() => router.push({ pathname: '/add-medicina', params: { id: m.id } })}
-                  onDelete={() => confirmDelete('medicina', () => deleteCartillaItem(petId, 'medicinas', m.id).then(() => cancelItem('medicinas', m.id)).catch(() => Alert.alert('No se pudo eliminar')))}
+                  onDelete={() => confirmDelete(`¿Eliminar ${m.name}?`, () => deleteCartillaItem(petId, 'medicinas', m.id).then(() => cancelItem('medicinas', m.id)).catch(() => Alert.alert('No se pudo eliminar')))}
                 />
               ))
             )}

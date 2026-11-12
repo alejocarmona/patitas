@@ -12,12 +12,12 @@ export default function CategoryChip({ label, active, onPress, outlined = false 
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 20,
-        backgroundColor: active ? '#fff' : 'rgba(255,255,255,0.2)',
+        backgroundColor: active ? '#fff' : 'rgba(0,0,0,0.2)',
         borderWidth: outlined && !active ? 1.5 : 0,
         borderColor: 'rgba(255,255,255,0.5)',
       }}
     >
-      <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: active ? theme.primary : '#fff' }}>{label}</Text>
+      <Text style={{ fontSize: 13, fontFamily: fonts.bold, color: active ? theme.primaryStrong : '#fff' }}>{label}</Text>
     </Pressable>
   );
 }

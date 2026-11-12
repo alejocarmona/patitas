@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { fonts, theme } from '../../constants/theme';
 
 // Encabezado de pantalla (reemplaza el degradado del prototipo por color sólido)
-export default function TopBar({ title, subtitle, color = theme.primary, onBack, right, children }) {
+export default function TopBar({ title, subtitle, color = theme.primaryStrong, onBack, right, children }) {
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -21,8 +21,11 @@ export default function TopBar({ title, subtitle, color = theme.primary, onBack,
         {onBack ? (
           <Pressable
             onPress={onBack}
+            accessibilityRole="button"
+            hitSlop={8}
             style={{
               backgroundColor: 'rgba(255,255,255,0.2)',
+              minHeight: 40,
               borderRadius: 12,
               paddingVertical: 8,
               paddingHorizontal: 12,
@@ -51,7 +54,7 @@ export default function TopBar({ title, subtitle, color = theme.primary, onBack,
         {title}
       </Text>
       {subtitle ? (
-        <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontFamily: fonts.regular }}>
+        <Text style={{ color: '#fff', fontSize: 14, fontFamily: fonts.regular }}>
           {subtitle}
         </Text>
       ) : null}

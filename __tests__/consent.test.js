@@ -1,11 +1,13 @@
 // Consentimiento (Ley 1581): texto con enlaces en el login y registro de la aceptación solo en cuentas nuevas.
 import { Linking } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
 const mockSetDoc = jest.fn(() => Promise.resolve());
 const mockGetDoc = jest.fn();
 const mockAuthState = { isNewUser: true };
 
+jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn(() => Promise.resolve({ type: 'opened' })) }));
 jest.mock('../firebase', () => ({ auth: () => 'AUTH', db: () => 'DB' }));
 jest.mock('@react-native-firebase/firestore', () => ({
   doc: (_db, ...p) => ({ path: p.join('/') }),
@@ -66,9 +68,9 @@ describe('consentimiento', () => {
     await renderRouter({ index: Login });
     expect(screen.getByText(/Al continuar aceptas los/)).toBeTruthy();
     await press(screen.getByText('Términos'));
-    expect(Linking.openURL).toHaveBeenLastCalledWith(legal.URL_TERMINOS);
+    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(legal.URL_TERMINOS, expect.any(Object));
     await press(screen.getByText('Política de privacidad'));
-    expect(Linking.openURL).toHaveBeenLastCalledWith(legal.URL_PRIVACIDAD);
+    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(legal.URL_PRIVACIDAD, expect.any(Object));
   });
 
   test('registro con correo: users/{uid} guarda acceptedTermsAt y termsVersion', async () => {

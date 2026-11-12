@@ -188,6 +188,12 @@ El `status` (`ok | pronto | vencida | completa`) NO se persiste: se calcula al l
 - `ok`: nextDate > hoy + 30 días
 - `completa`: sin `nextDate` (null/''); no cuenta como vencida ni pronto, va al final de la lista
 
+**El estado se calcula por TIPO de vacuna, no por dosis:** `utils/vacunas.js` (`groupVacunas`, nombre normalizado
+sin mayúsculas/tildes/espacios) deja como `latest` la dosis con `appliedDate` más reciente; SOLO ella define el
+estado (`useVacunas` devuelve `groups` y `latests`). Las anteriores son "Historial" (plegado, sin badge, no cuentan en
+alertas de Inicio, "por renovar" ni "Al día gracias a ti"). La tarjeta vencida/próxima trae "Ya se la pusieron"
+(abre `add-vacuna?renewName=` con el nombre y hoy precargados).
+
 Las fechas son strings `YYYY-MM-DD` interpretadas en hora LOCAL. Nunca usar
 `new Date('YYYY-MM-DD')` (parsea como UTC y en Colombia corre un día).
 
@@ -461,35 +467,30 @@ máximo cada 60 s (dentro de la ventana sirve el cache sin llamar).
 
 ## 8. TEMA VISUAL
 
-Trasladar exactamente desde el prototipo `patitas-final.jsx`
-a `constants/theme.js`:
+`constants/theme.js` (fuente de verdad; el prototipo `patitas-final.jsx` queda como referencia de layout, no de color):
 
 ```javascript
-export const theme = {
-  primary: '#FF6B35',
-  primaryDark: '#E5521A',
-  secondary: '#2D4A3E',
-  accent: '#FFD166',
-  bg: '#FDF6F0',
-  text: '#1A1A2E',
-  textMuted: '#7A7A9A',
-  textLight: '#B0B0C8',
-  success: '#4CAF82',
-  danger: '#FF4757',
-  border: '#F0E8E0',
-};
-
-export const spacing = {
-  xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32,
-};
-
-export const radius = {
-  sm: 8, md: 12, lg: 16, xl: 20, xxl: 28,
-};
+primary '#FF6B35'        // solo superficies grandes sin texto pequeño (ícono, splash)
+primaryStrong '#C2410C'  // botones y headers con texto blanco (5,18:1), texto de acción, tab activo
+secondary '#2D4A3E'      // verde = salud (headers de Cartilla/formularios/Vets, "Ya se la pusieron", switches, colorAccent nativo)
+textMuted '#62627E' · textSubtle '#6E6E8C' (4,92:1; fechas, placeholders) · divider '#B0B0C8' (solo líneas/íconos, nunca texto)
+success '#257A50' · danger '#C81E31' (solo "vencida", errores y acciones destructivas) · neutralAction '#62627E' ("Eliminar" en tarjetas)
+statusColors { ok, pronto, vencida, completa } -> { fg, bg, icon }  // texto oscuro sobre fondo claro (>= 4,5:1) + ícono Feather
 ```
+
+Reglas: un solo relleno naranja por pantalla; rojo solo para vencida/destructivo ("Cerrar sesión" es contorno
+neutro; "Eliminar" de tarjeta es gris); el estado nunca depende solo del color (ícono + palabra). Los pares de
+color tienen prueba de contraste WCAG en `__tests__/ux-utils.test.js`. Color nativo de acento (pickers, diálogos):
+`plugins/withNativeAccent.js` (config plugin de `app.json`) fija `colorPrimary/colorAccent` del `AppTheme` en
+`#2D4A3E`. Los `Alert` de Android ignoran `style: 'destructive'` (no se pueden pintar de rojo sin un diálogo propio).
+Íconos: `assets/images/` (render con `@resvg/resvg-js-cli` desde `assets/icon-proposals/*.svg`; pata blanca sobre `#FF6B35`).
 
 Fuente: Inter en todos sus pesos via `@expo-google-fonts/inter`.
 Nunca usar la fuente del sistema — siempre Inter.
+
+Formularios (`hooks/useFormGuards.js`): errores que se borran al volver válidos, `StatusBarCover` + scroll al primer error,
+"¿Descartar cambios?" (`usePreventRemove`), horas en 12 h (a. m./p. m.) con resumen del horario, rango de peso por
+especie con confirmación suave (`utils/weight.js`), áreas táctiles de 48 dp en acciones de tarjeta.
 
 ---
 
@@ -589,8 +590,8 @@ Seguir fases en orden. Confirmar criterio de pausa antes de avanzar.
   procedimiento de reclamos. El RNBD no aplica a una persona natural (Decreto 090 de 2018). `firebase.json` ya trae `hosting`
   (`public/`, `cleanUrls`). **Hosting NO está desplegado.** Si cambia el comportamiento de la app
   (datos, SDKs, permisos), actualizar la política en el mismo cambio.
-- **Perfil:** sección "Legal" (Política de privacidad, Términos y condiciones: `Linking.openURL`, sin
-  módulos nativos nuevos) y "Eliminar cuenta" al final (estilo destructivo).
+- **Perfil:** sección "Legal" (Política de privacidad, Términos y condiciones: navegador integrado
+  `expo-web-browser` / `services/browser.js`, barra `#2D4A3E`; el login usa lo mismo) y "Eliminar cuenta" al final (estilo destructivo).
 - **Login:** texto "Al continuar aceptas los Términos y la Política de privacidad" con ambos enlaces.
   Se registra `acceptedTermsAt` + `termsVersion` en `users/{uid}` solo en cuentas nuevas. Robustez
   (Ley 1581 art. 17 b): si `ensureUserDoc` falla al registrarse se reintenta una vez y se registra el
@@ -613,10 +614,13 @@ Seguir fases en orden. Confirmar criterio de pausa antes de avanzar.
   **Solo surten efecto en el próximo rebuild nativo** (`expo prebuild` / build de release); el `android/`
   actual no cambia hasta entonces. Pendiente de verificar en el rebuild: que bloquear SYSTEM_ALERT_WINDOW
   no rompa el menú de desarrollo en debug (si lo rompe, quitarlo de `blockedPermissions`).
-  **`android/` está desactualizado** (allowBackup, blockedPermissions y las flags nativas de `firebase.json` solo
-  se aplican al regenerarlo): antes del build de release correr `npx expo prebuild --platform android`
-  (respaldar `android/local.properties` antes y restaurarlo después: el prebuild lo borra) y verificar en el
-  manifiesto fusionado que `allowBackup="false"` y que `AD_ID` ya no aparece. NO se ha ejecutado.
+  **`android/` regenerado el 2026-11-12** con `npx expo prebuild --platform android --no-install` (sin `--clean`; respaldar
+  `android/local.properties` antes y restaurarlo después: el prebuild lo borra) y verificado en el manifiesto fusionado
+  (debug): `allowBackup="false"`, sin `AD_ID`/`ACCESS_ADSERVICES_*`/`READ|WRITE_EXTERNAL_STORAGE`, flags de Analytics de
+  `firebase.json` aplicadas (`google_analytics_adid_collection_enabled=false`, `..._allow_ad_storage=false`, etc.).
+  `SYSTEM_ALERT_WINDOW` sigue en el manifiesto de DEBUG (lo añade `android/app/src/debug/AndroidManifest.xml`, necesario para
+  el menú de desarrollo); el bloqueo solo cuenta en release (pendiente de verificar en el primer build de release).
+  Con `userInterfaceStyle: light` el tema nativo es claro (`plugins/withNativeAccent.js`).
 - **`firestore.rules` (cambio local, PENDIENTE DE DESPLEGAR):** `users/{uid}` permite `read, create,
   delete` al dueño y `update` solo si `acceptedTermsAt` no existía o `acceptedTermsAt`/`termsVersion`
   no cambian (la prueba de aceptación no se puede reescribir); en `create` y en la primera escritura de
@@ -731,6 +735,8 @@ Antes de dar por buena cualquier versión, correr las 3 capas:
    los tests cazan el bug. Todo bug nuevo reportado por el dueño añade aquí su test.
    `__tests__/tips-flow.test.js` (tips por especie/categoría, guardar/desguardar + contador, detalle y volver, error) y
    `__tests__/directorio-flow.test.js` (permiso denegado, lista por distancia, sin key, error + reintento, Llamar/Cómo llegar, cache 10 min, vacuna vencida -> directorio). Unitarias nuevas: `geo`, `tipsUtils`, `places` (headers, mapeo, errores), `cache`. Helpers: `test-helpers/tipsMock.js`, `locationMock.js`.
+   `__tests__/ux-flow.test.js` (vacuna por dosis más reciente + Historial, "Ya se la pusieron", primer paso en Inicio, errores que se
+   borran, "¿Descartar cambios?", peso atípico, resumen de medicina) y `ux-utils.test.js` (agrupación, peso, horas 12 h, contraste WCAG).
    `__tests__/reminders-flow.test.js`: vacuna sin próxima dosis ("Completa"), medicina con
    recordatorio (N llamadas a `scheduleNotificationAsync`), editar/borrar (cancela los IDs previos),
    permiso denegado y toque de notificación. Mockea `expo-notifications`
@@ -739,7 +745,7 @@ Antes de dar por buena cualquier versión, correr las 3 capas:
 3. **E2E en dispositivo (Maestro)** — `npm run test:e2e` (`maestro test .maestro`)
    con el Moto por USB y la app debug instalada, ya con sesión iniciada:
    `.maestro/navegacion.yaml`, `.maestro/formularios.yaml`, `.maestro/vacuna-completa.yaml` y
-   `.maestro/medicina-recordatorio.yaml`, `.maestro/tips.yaml` (filtra, detalle, guarda, Guardados, desguarda) y `.maestro/directorio.yaml` (diálogo de permiso; lista o estado sin key) (los flujos que crean datos borran SOLO su ítem de prueba con
+   `.maestro/medicina-recordatorio.yaml`, `.maestro/vacuna-historial.yaml` (dosis vieja vencida + nueva -> Historial), `.maestro/tips.yaml` (filtra, detalle, guarda, Guardados, desguarda) y `.maestro/directorio.yaml` (diálogo de permiso; lista o estado sin key) (los flujos que crean datos borran SOLO su ítem de prueba con
    `below:`; la cartilla real del dueño tiene datos. Generan capturas con
    `takeScreenshot` para revisar barra inferior y teclado; usar `--test-output-dir`).
    Instalar Maestro CLI (Windows): descargar

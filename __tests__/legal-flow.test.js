@@ -5,6 +5,7 @@ import React from 'react';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { Redirect, Stack } from 'expo-router';
 import { Text } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 
 const mockPet = { id: 'pet1', name: 'Lirya', species: 'Gato' };
 const mockAuth = {
@@ -39,6 +40,9 @@ jest.mock('../services/auth', () => ({
   authErrorMessage: () => 'Algo salió mal.',
   saveAnalyticsPreference: jest.fn(() => Promise.resolve()),
 }));
+jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn(() => Promise.resolve({ type: 'opened' })) }));
+jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { version: '1.0.0' } } }));
+jest.mock('../services/analytics', () => ({ track: { contactOpened: jest.fn() } }));
 jest.mock('../services/accountDeletion', () => ({ deleteAccount: jest.fn() }));
 jest.mock('@expo/vector-icons', () => {
   const { Text: T } = require('react-native');
@@ -48,6 +52,7 @@ jest.mock('@expo/vector-icons', () => {
 const { deleteAccount } = require('../services/accountDeletion');
 const { saveAnalyticsPreference } = require('../services/auth');
 const legal = require('../constants/legal');
+const { track } = require('../services/analytics');
 const Perfil = require('../app/(main)/perfil').default;
 
 function RootLayout() {
@@ -108,6 +113,33 @@ describe('Perfil: Legal y eliminar cuenta', () => {
     expect(screen.getByText('Eliminar cuenta')).toBeTruthy();
   });
 
+  test('Escríbenos abre el correo con asunto de versión/equipo, registra contact_opened y no avisa si todo va bien', async () => {
+    jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(true);
+    await renderPerfil();
+    expect(screen.getByText('Ayuda')).toBeTruthy();
+    expect(screen.getByText('Dudas, ideas o problemas con la app')).toBeTruthy();
+    await press(screen.getByText('Escríbenos'));
+    await waitFor(() => expect(openURL).toHaveBeenCalled());
+    const url = openURL.mock.calls[0][0];
+    expect(url.startsWith(`mailto:${legal.CONTACT_EMAIL}?subject=`)).toBe(true);
+    expect(decodeURIComponent(url)).toContain('Patitas v1.0.0');
+    expect(track.contactOpened).toHaveBeenCalledTimes(1);
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  test('Escríbenos: si no hay app de correo (canOpenURL false) o openURL falla, muestra el correo en una alerta', async () => {
+    jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(false);
+    await renderPerfil();
+    await press(screen.getByText('Escríbenos'));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith('Escríbenos', expect.stringContaining(legal.CONTACT_EMAIL)));
+    expect(openURL).not.toHaveBeenCalled();
+    Alert.alert.mockClear();
+    Linking.canOpenURL.mockResolvedValue(true);
+    openURL.mockRejectedValue(new Error('x'));
+    await press(screen.getByText('Escríbenos'));
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith('Escríbenos', expect.stringContaining(legal.CONTACT_EMAIL)));
+  });
+
   test('"Compartir estadísticas de uso" está activado por defecto y al apagarlo se guarda la preferencia', async () => {
     await renderPerfil();
     const sw = screen.getByTestId('switch-estadisticas');
@@ -136,13 +168,15 @@ describe('Perfil: Legal y eliminar cuenta', () => {
   test('Política de privacidad y Términos abren su URL pública', async () => {
     await renderPerfil();
     await press(screen.getByText('Política de privacidad'));
-    expect(openURL).toHaveBeenLastCalledWith(legal.URL_PRIVACIDAD);
+    // navegador integrado (Custom Tab): "Atrás" vuelve a Patitas
+    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(legal.URL_PRIVACIDAD, expect.objectContaining({ toolbarColor: '#2D4A3E' }));
     await press(screen.getByText('Términos y condiciones'));
-    expect(openURL).toHaveBeenLastCalledWith(legal.URL_TERMINOS);
+    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(legal.URL_TERMINOS, expect.objectContaining({ toolbarColor: '#2D4A3E' }));
+    expect(openURL).not.toHaveBeenCalled();
   });
 
   test('si no se puede abrir el enlace avisa, sin romper', async () => {
-    openURL.mockRejectedValueOnce(new Error('sin navegador'));
+    WebBrowser.openBrowserAsync.mockRejectedValueOnce(new Error('sin navegador'));
     await renderPerfil();
     await press(screen.getByText('Política de privacidad'));
     await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith('No se pudo abrir el enlace', expect.any(String)));

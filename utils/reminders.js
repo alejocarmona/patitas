@@ -103,3 +103,38 @@ export function computeVaccineReminderTimes(nextDate, now = new Date()) {
   const before = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7, 9, 0, 0, 0);
   return [before, same].filter((t) => t > now);
 }
+
+// '16:00' -> '4:00 p. m.' (la app habla en 12 h; el valor guardado sigue siendo 'HH:mm' 24 h)
+export function formatTime12(str) {
+  const t = parseTime(str);
+  if (!t) return '';
+  const suffix = t.h >= 12 ? 'p. m.' : 'a. m.';
+  const h12 = t.h % 12 === 0 ? 12 : t.h % 12;
+  return `${h12}:${String(t.min).padStart(2, '0')} ${suffix}`;
+}
+
+// Resumen de una línea del horario que se va a programar.
+// 'Recordatorios: cada 8 horas desde las 8:00 a. m., durante 7 días' / '..., sin fecha de fin'
+export function scheduleSummary({ intervalValue, intervalUnit, firstDoseTime, durationDays }, reminders = true) {
+  const n = Number(intervalValue);
+  if (!Number.isInteger(n) || n < 1 || !isValidTime(firstDoseTime)) return '';
+  if (intervalUnit !== 'horas' && intervalUnit !== 'dias') return '';
+  let every;
+  if (intervalUnit === 'dias') every = n === 1 ? 'cada día' : `cada ${n} días`;
+  else every = n === 1 ? 'cada hora' : `cada ${n} horas`;
+  const dur = Number(durationDays);
+  const hasDur = String(durationDays ?? '').trim() !== '' && Number.isInteger(dur) && dur >= 1;
+  const tail = hasDur ? `durante ${dur} ${dur === 1 ? 'día' : 'días'}` : 'sin fecha de fin';
+  return `${reminders ? 'Recordatorios' : 'Horario (sin recordatorios)'}: ${every} desde las ${formatTime12(firstDoseTime)}, ${tail}`;
+}
+
+// 'hoy 4:00 p. m.' / 'mañana 8:00 a. m.' / '15 Nov 8:00 a. m.'
+export function formatNextDose(date, now = new Date()) {
+  const t = toTimeString(date);
+  const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diff = Math.round((day(date) - day(now)) / 86400000);
+  if (diff === 0) return `hoy ${formatTime12(t)}`;
+  if (diff === 1) return `mañana ${formatTime12(t)}`;
+  const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  return `${date.getDate()} ${MESES[date.getMonth()]} ${formatTime12(t)}`;
+}

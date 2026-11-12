@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useSubcollection } from './useSubcollection';
 import { getVacunaStatus } from '../utils/vacunaStatus';
+import { groupVacunas } from '../utils/vacunas';
 
 // Próxima dosis más cercana primero; las completas (sin próxima dosis) al final,
 // de la más reciente aplicada a la más antigua.
@@ -19,5 +20,9 @@ export function useVacunas(petId) {
     const today = new Date();
     return items.map((v) => ({ ...v, status: getVacunaStatus(v.nextDate, today) ?? 'ok' }));
   }, [items]);
-  return { vacunas, loading, error };
+  // `groups`: una entrada por tipo de vacuna; SOLO `latest` define el estado, `history` son dosis anteriores.
+  // Las alertas, "por renovar" e Inicio usan `latests` (nunca el historial).
+  const groups = useMemo(() => groupVacunas(items), [items]);
+  const latests = useMemo(() => groups.map((g) => g.latest), [groups]);
+  return { vacunas, groups, latests, loading, error };
 }

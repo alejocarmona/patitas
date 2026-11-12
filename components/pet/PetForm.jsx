@@ -11,6 +11,9 @@ import { parseLocalDate, startOfDay } from '../../utils/vacunaStatus';
 
 const SPECIES = ['Perro', 'Gato', 'Conejo', 'Ave', 'Otro'];
 
+// 'perro-1' -> 'Perro 1' (etiqueta legible para lectores de pantalla)
+const avatarLabel = (a) => String(a.id).replace('-', ' ');
+
 // Formulario compartido: crear mascota (onboarding) y editar.
 // initial: { name, species, breed, gender, birthdate, avatarId } | undefined
 export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, submitting = false }) {
@@ -53,18 +56,18 @@ export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, s
             <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 }}>
               Elige su avatar
             </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 }}>
               {AVATARS.map((a) => {
                 const on = form.avatarId === a.id;
                 return (
                   <Pressable
                     key={a.id}
                     onPress={() => setForm((f) => ({ ...f, avatarId: a.id, species: a.species }))}
-                    accessibilityLabel={`Avatar ${a.id}`}
+                    accessibilityLabel={`Avatar ${avatarLabel(a)}`}
                     style={{
                       borderRadius: 22,
                       borderWidth: 3,
-                      borderColor: on ? theme.primary : 'transparent',
+                      borderColor: on ? theme.secondary : 'transparent',
                       padding: 2,
                     }}
                   >
@@ -79,7 +82,7 @@ export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, s
           <ChoiceChips label="Especie" options={SPECIES} value={form.species} onChange={pickSpecies} />
           <Field label="Raza" value={form.breed} onChangeText={set('breed')} placeholder="Ej: Labrador, Persa..." maxLength={40} />
           <DateField label="Fecha de nacimiento" maximumDate={new Date()} value={form.birthdate} onChangeText={set('birthdate')} error={errors.birthdate} />
-          <ChoiceChips label="Género" options={['Macho', 'Hembra']} value={form.gender} onChange={set('gender')} />
+          <ChoiceChips label="Sexo" options={['Macho', 'Hembra']} value={form.gender} onChange={set('gender')} />
 
           <Button
             label={isEdit ? 'Guardar cambios' : `¡Listo, creemos el perfil de ${nombre}! 🐾`}

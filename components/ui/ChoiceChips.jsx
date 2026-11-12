@@ -26,16 +26,18 @@ export default function ChoiceChips({ label, options, value, onChange }) {
             <Pressable
               key={o}
               onPress={() => onChange(o)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
               style={{
                 paddingVertical: 8,
                 paddingHorizontal: 16,
                 borderRadius: 20,
                 borderWidth: 2,
-                borderColor: on ? theme.primary : theme.border,
-                backgroundColor: on ? `${theme.primary}15` : '#fff',
+                borderColor: on ? theme.primaryStrong : theme.border,
+                backgroundColor: on ? `${theme.primaryStrong}15` : '#fff',
               }}
             >
-              <Text style={{ fontSize: 13, fontFamily: fonts.bold, color: on ? theme.primary : theme.textMuted }}>
+              <Text style={{ fontSize: 13, fontFamily: fonts.bold, color: on ? theme.primaryStrong : theme.textMuted }}>
                 {o}
               </Text>
             </Pressable>
