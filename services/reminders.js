@@ -218,3 +218,21 @@ export function syncAll({ petName, medicinas = [], vacunas = [], now = new Date(
     await writeStore(store);
   });
 }
+
+// Cancela TODO lo programado por la app y vacía la tienda local (al eliminar la cuenta).
+export function clearAllReminders() {
+  return serial(async () => {
+    const store = await readStore();
+    for (const key of Object.keys(store)) await cancelIds(store[key].ids);
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch {
+      // ya no quedaba nada
+    }
+    try {
+      await AsyncStorage.removeItem(STORE_KEY);
+    } catch {
+      // sin almacenamiento no hay nada que limpiar
+    }
+  });
+}

@@ -1,0 +1,26 @@
+# Perfil: sección Legal y diálogo de "Eliminar cuenta.*". NUNCA confirma la eliminación:
+# el flujo cancela en el primer aviso (la cuenta y la mascota reales del dueño no se tocan).
+appId: com.alejocarmona.patitas
+---
+- launchApp:
+    clearState: false
+    stopApp: true
+- tapOn:
+    id: "perfil-btn"
+- assertVisible: "Mi perfil"
+- scrollUntilVisible:
+    element: "Eliminar cuenta.*"
+- assertVisible: "Legal"
+- assertVisible: "Política de privacidad"
+- assertVisible: "Términos y condiciones"
+- assertVisible: "Eliminar cuenta.*"
+- takeScreenshot: perfil-legal
+- tapOn: "Eliminar cuenta.*"
+- assertVisible: "¿Eliminar tu cuenta.*"
+- assertVisible: ".*permanente.*"
+- takeScreenshot: eliminar-dialogo
+# Cancelar: no pasa nada
+- tapOn: "Cancelar"
+- assertNotVisible: "¿Eliminar tu cuenta.*"
+- assertNotVisible: "Eliminar definitivamente"
+- assertVisible: "Mi perfil"

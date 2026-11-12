@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/ui/Button';
 import Field from '../components/ui/Field';
 import { fonts, theme } from '../constants/theme';
+import { URL_PRIVACIDAD, URL_TERMINOS } from '../constants/legal';
 import {
   authErrorMessage,
   loginWithEmail,
@@ -12,6 +13,9 @@ import {
   registerWithEmail,
   resetPassword,
 } from '../services/auth';
+
+const openLegal = (url) =>
+  Linking.openURL(url).catch(() => Alert.alert('No se pudo abrir el enlace', 'Revisa tu conexión e inténtalo de nuevo.'));
 
 // mode: 'choose' | 'login' | 'register' | 'reset'
 export default function Login() {
@@ -199,8 +203,14 @@ export default function Login() {
         )}
 
         <Text style={{ textAlign: 'center', fontSize: 12, color: theme.textLight, fontFamily: fonts.regular, marginTop: 28 }}>
-          Al continuar aceptas nuestros <Text style={{ color: theme.primary }}>Términos</Text> y{' '}
-          <Text style={{ color: theme.primary }}>Política de privacidad</Text>
+          Al continuar aceptas los{' '}
+          <Text accessibilityRole="link" onPress={() => openLegal(URL_TERMINOS)} style={{ color: theme.primary, fontFamily: fonts.semibold }}>
+            Términos
+          </Text>{' '}
+          y la{' '}
+          <Text accessibilityRole="link" onPress={() => openLegal(URL_PRIVACIDAD)} style={{ color: theme.primary, fontFamily: fonts.semibold }}>
+            Política de privacidad
+          </Text>
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>

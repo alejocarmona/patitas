@@ -1,6 +1,6 @@
 // Analytics (RNFirebase). Nombres de eventos en inglés. NUNCA PII.
 // La retención la calcula GA4: no hay evento propio de retención.
-import { logEvent as rnLogEvent, setUserProperty } from '@react-native-firebase/analytics';
+import { logEvent as rnLogEvent, setUserProperty, setAnalyticsCollectionEnabled } from '@react-native-firebase/analytics';
 import { analyticsInstance } from '../firebase';
 
 function safe(fn) {
@@ -12,14 +12,45 @@ function safe(fn) {
   }
 }
 
+// Preferencia "Compartir estadísticas de uso" (users/{uid}.analyticsEnabled). Con false no se
+// registra nada más: se apaga la recolección de Firebase (persiste entre aperturas) y logEvent
+// deja de enviar.
+// Arranca APAGADO (firebase.json también desactiva la recolección automática): nada se envía antes de
+// que exista una sesión (la autorización se da al crear la cuenta / iniciar sesión). AuthProvider lo
+// enciende al haber sesión (según la preferencia) y lo apaga sin sesión.
+let collectionEnabled = false;
+
+// Eventos que ocurren ANTES de que la recolección esté activa (onboarding, sign_up, login). Se
+// guardan en memoria y se envían al activarse; si se apaga (cierre de sesión / opt-out) se descartan.
+let pending = [];
+
+export function setAnalyticsEnabled(enabled) {
+  collectionEnabled = enabled !== false;
+  safe(() => setAnalyticsCollectionEnabled(analyticsInstance(), collectionEnabled));
+  if (collectionEnabled) {
+    const q = pending;
+    pending = [];
+    q.forEach(([name, params]) => safe(() => rnLogEvent(analyticsInstance(), name, params)));
+  } else {
+    pending = [];
+  }
+}
+
+// Como logEvent, pero si la recolección aún no está activa lo deja en cola para enviarlo después.
+function logEventDeferred(name, params) {
+  if (collectionEnabled) return logEvent(name, params);
+  pending.push([name, params]);
+}
+
 export function logEvent(name, params) {
+  if (!collectionEnabled) return;
   safe(() => rnLogEvent(analyticsInstance(), name, params));
 }
 
 export const track = {
-  signUp: (method) => logEvent('sign_up', { method }),
-  login: (method) => logEvent('login', { method }),
-  onboardingCompleted: (skipped) => logEvent('onboarding_completed', { skipped }),
+  signUp: (method) => logEventDeferred('sign_up', { method }),
+  login: (method) => logEventDeferred('login', { method }),
+  onboardingCompleted: (skipped) => logEventDeferred('onboarding_completed', { skipped }),
   petProfileCreated: (species, avatarId) =>
     logEvent('pet_profile_created', { species, avatar_id: avatarId }),
   vaccineAdded: (status) => logEvent('vaccine_added', { status: status ?? 'unknown' }),
@@ -39,8 +70,10 @@ export const track = {
   locationPermission: (granted) => logEvent('location_permission', { granted: !!granted }),
   vetCall: () => logEvent('vet_call'),
   vetDirections: () => logEvent('vet_directions'),
+  accountDeleted: () => logEvent('account_deleted'),
 };
 
 export function setPetSpecies(species) {
+  if (!collectionEnabled) return;
   safe(() => setUserProperty(analyticsInstance(), 'pet_species', species));
 }

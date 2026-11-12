@@ -26,6 +26,8 @@ appId: com.alejocarmona.patitas
 - tapOn: "Ver guardados"
 - assertVisible: "¿Con qué frecuencia bañar a un gato?"
 - takeScreenshot: tips-guardados
-# Limpieza: desguardar
-- tapOn: "Guardado"
-- assertVisible: "Sin tips guardados aún"
+# Limpieza: desguardar. No se exige la lista vacía: el dueño puede tener otros tips guardados.
+- tapOn:
+    text: "Guardado"
+    below: "¿Con qué frecuencia bañar a un gato?"
+- assertNotVisible: "¿Con qué frecuencia bañar a un gato?"

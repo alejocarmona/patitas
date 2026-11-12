@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onAuthStateChanged } from '@react-native-firebase/auth';
-import { collection, limit, onSnapshot, query, where } from '@react-native-firebase/firestore';
+import { collection, doc, limit, onSnapshot, query, where } from '@react-native-firebase/firestore';
 import { auth, db } from '../firebase';
 import { AuthContext } from '../hooks/useAuth';
-import { setPetSpecies } from '../services/analytics';
+import { setPetSpecies, setAnalyticsEnabled } from '../services/analytics';
 
 const ONBOARDING_KEY = 'onboardingSeen';
 
@@ -15,6 +15,7 @@ export default function AuthProvider({ children }) {
   const [petReady, setPetReady] = useState(false);
   const [seen, setSeen] = useState(false);
   const [seenReady, setSeenReady] = useState(false);
+  const [analyticsEnabled, setAnalyticsEnabledState] = useState(true);
 
   // Flag de onboarding
   useEffect(() => {
@@ -62,6 +63,24 @@ export default function AuthProvider({ children }) {
     return unsub;
   }, [uid]);
 
+  // Preferencia de estadísticas (users/{uid}.analyticsEnabled): se aplica al iniciar sesión y al cambiar.
+  // Sin sesión (incluido tras cerrar sesión) la recolección queda apagada.
+  useEffect(() => {
+    if (!uid) {
+      setAnalyticsEnabled(false);
+      return undefined;
+    }
+    return onSnapshot(
+      doc(db(), 'users', uid),
+      (snap) => {
+        const enabled = snap.data()?.analyticsEnabled !== false;
+        setAnalyticsEnabledState(enabled);
+        setAnalyticsEnabled(enabled);
+      },
+      () => {}
+    );
+  }, [uid]);
+
   const setOnboardingSeen = useCallback(async () => {
     setSeen(true);
     try {
@@ -77,9 +96,10 @@ export default function AuthProvider({ children }) {
       pet,
       onboardingSeen: seen,
       loading: !(authReady && petReady && seenReady),
+      analyticsEnabled,
       setOnboardingSeen,
     }),
-    [user, pet, seen, authReady, petReady, seenReady, setOnboardingSeen]
+    [user, pet, seen, authReady, petReady, seenReady, analyticsEnabled, setOnboardingSeen]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

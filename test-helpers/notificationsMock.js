@@ -21,5 +21,6 @@ module.exports = {
   }),
   scheduleNotificationAsync: jest.fn(async () => `notif-${state.nextId++}`),
   cancelScheduledNotificationAsync: jest.fn(async () => {}),
+  cancelAllScheduledNotificationsAsync: jest.fn(async () => {}),
   useLastNotificationResponse: jest.fn(() => state.lastResponse),
 };

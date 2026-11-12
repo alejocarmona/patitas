@@ -40,7 +40,8 @@
     "start": "expo start",
     "android": "expo run:android",
     "test": "jest",
-    "test:e2e": "maestro test .maestro"
+    "test:e2e": "maestro test .maestro",
+    "build:legal": "node scripts/build-legal.js"
   },
   "private": true,
   "jest": {

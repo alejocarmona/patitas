@@ -18,6 +18,7 @@ jest.mock('../services/firestore', () => ({
   addCartillaItem: jest.fn(), updateCartillaItem: jest.fn(), deleteCartillaItem: jest.fn(), updatePet: jest.fn(),
 }));
 jest.mock('../services/auth', () => ({ signOut: jest.fn(), logout: jest.fn() }));
+jest.mock('../services/accountDeletion', () => ({ deleteAccount: jest.fn(() => Promise.resolve()) }));
 jest.mock('../services/analytics', () => {
   const fns = {};
   return {

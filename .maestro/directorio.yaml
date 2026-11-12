@@ -12,6 +12,6 @@ appId: com.alejocarmona.patitas
     commands:
       - tapOn: "Mientras la app está en uso|Al usar la app|While using the app"
 - extendedWaitUntil:
-    visible: "Resultados de Google|Directorio no disponible por ahora|Necesitamos tu ubicación|No pudimos cargar las veterinarias"
+    visible: ".*resultados cerca de ti|Resultados de Google|Directorio no disponible por ahora|Necesitamos tu ubicación|No pudimos cargar las veterinarias"
     timeout: 20000
 - takeScreenshot: directorio

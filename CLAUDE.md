@@ -73,7 +73,11 @@ patitas/
 ├── patitas-final.jsx            ← prototipo referencia visual
 ├── app.json                     ← config Expo
 ├── google-services.json         ← config Firebase Android (no commitear)
-├── firebase.json                ← apunta a firestore.rules
+├── firebase.json                ← firestore.rules + hosting (public/, cleanUrls; NO desplegado)
+├── constants/legal.js           ← identidad legal ÚNICA (app + web)
+├── legal/content/*.md           ← fuente de privacidad, términos, eliminar-cuenta
+├── scripts/build-legal.js       ← genera public/*.html (npm run build:legal)
+├── public/                      ← HTML legal generado (hosting)
 ├── firestore.rules              ← reglas de seguridad
 ├── .env                         ← solo EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (no commitear)
 ├── .env.example
@@ -82,7 +86,7 @@ patitas/
 │   ├── _layout.jsx              ← root layout + AuthProvider + redirección declarativa
 │   ├── index.jsx                ← punto de entrada (el layout redirige)
 │   ├── onboarding.jsx           ← 3 slides onboarding
-│   ├── login.jsx                ← Google + email login
+│   ├── login.jsx                ← Google + email login (texto de consentimiento con enlaces legales)
 │   ├── crear-mascota.jsx        ← primer perfil de mascota
 │   │
 │   └── (main)/                  ← zona protegida (requiere auth + mascota)
@@ -137,9 +141,14 @@ Fechas: `components/ui/DateField.jsx` abre el calendario nativo
   "name": "string",
   "email": "string",
   "photoURL": "string | null",
-  "createdAt": "timestamp"
+  "createdAt": "timestamp",
+  "acceptedTermsAt": "timestamp (solo cuentas creadas desde 2026-11-12)",
+  "termsVersion": "string (p. ej. '2026-11-12')"
 }
 ```
+
+`acceptedTermsAt`/`termsVersion` se escriben solo al REGISTRAR una cuenta nueva (correo, o Google con
+`isNewUser`). Usuarios anteriores (el dueño) no los tienen: no se les bloquea ni se les escribe en silencio.
 
 ### `pets/{petId}`
 ```json
@@ -402,6 +411,7 @@ analytics().logEvent('directory_viewed', { results_count }); // bucket: '0' | '1
 analytics().logEvent('location_permission', { granted });    // boolean
 analytics().logEvent('vet_call');
 analytics().logEvent('vet_directions');
+analytics().logEvent('account_deleted');                     // justo ANTES de borrar, sin parámetros
 ```
 Nunca coordenadas ni nombres/IDs de lugares en analytics.
 
@@ -545,17 +555,101 @@ Seguir fases en orden. Confirmar criterio de pausa antes de avanzar.
 - [x] Botones Llamar y Cómo llegar
 
 ### Fase 6 — Perfil y pulido
-- [ ] Pantalla Perfil con ajustes y cerrar sesión con confirmación
+- [x] Pantalla Perfil con cerrar sesión con confirmación, sección Legal y Eliminar cuenta (ajustes: pendiente)
+- [x] Legal: política de privacidad, términos y página de eliminación (HTML generado; revisión del dueño y despliegue pendientes)
+- [x] Eliminar cuenta dentro de la app (requisito Google Play)
 - [ ] Loading / empty / error states en todas las pantallas
 - [x] Recordatorios con notificaciones locales (`expo-notifications`, sin servidor)
 - [ ] Push remoto FCM (P2, opcional)
 
 ### Fase 7 — Publicación
 - [ ] Íconos y splash screen definitivos; reemplazar avatares placeholder
+- [ ] Reemplazar `CONTACT_EMAIL` en `constants/legal.js`, `npm run build:legal -- --strict` y desplegar hosting (`npx firebase-tools deploy --only hosting`)
+- [ ] Declarar en Play Console: URL de política (`/privacidad`) y de eliminación de cuenta (`/eliminar-cuenta`), y Seguridad de los datos (incluye ID de publicidad de Android de Firebase Analytics)
 - [ ] Firestore rules desplegadas
 - [ ] Restricción de API keys en Google Cloud Console
 - [ ] Build de release firmado (local con Gradle, o EAS si se decide)
 - [ ] Subir a Google Play (internal testing)
+
+---
+
+## 10b. LEGAL, CONSENTIMIENTO Y ELIMINACIÓN DE CUENTA (Ley 1581/2012, Decreto 1377/2013)
+
+- **Fuente única:** `constants/legal.js` (CommonJS; lo leen la app y `scripts/build-legal.js`): responsable
+  (Alejandro Carmona, Medellín), `CONTACT_EMAIL` (ya definido), **`DIRECCION` y `TELEFONO` = marcadores
+  `{{DIRECCION}}`/`{{TELEFONO}}` que el dueño debe completar** (Decreto 1377 art. 13 num. 1; salen en la
+  identificación y el contacto de la política), `TERMS_EFFECTIVE_DATE`, URLs `/privacidad`, `/terminos`, `/eliminar-cuenta` bajo
+  `https://patitas-alejocarmona.web.app`, `LAST_UPDATED`/`TERMS_VERSION` = '2026-11-12'.
+- **Páginas web:** `legal/content/{privacidad,terminos,eliminar-cuenta}.md` -> `npm run build:legal` genera
+  `public/*.html` (sin `--strict` lista los marcadores `{{X}}` pendientes; `--strict` falla si queda
+  alguno: **no publicar hasta completar DIRECCION y TELEFONO**). Son BORRADOR pendiente de revisión del
+  dueño (los comentarios `<!-- -->` del .md son notas internas y el generador los quita del HTML); no es
+  asesoría legal. La política incluye vigencia, retención con cifras (backups ~180 días, Analytics hasta
+  14 meses), roles de Google (encargado vs. responsable independiente), transmisión/transferencia y
+  procedimiento de reclamos. El RNBD no aplica a una persona natural (Decreto 090 de 2018). `firebase.json` ya trae `hosting`
+  (`public/`, `cleanUrls`). **Hosting NO está desplegado.** Si cambia el comportamiento de la app
+  (datos, SDKs, permisos), actualizar la política en el mismo cambio.
+- **Perfil:** sección "Legal" (Política de privacidad, Términos y condiciones: `Linking.openURL`, sin
+  módulos nativos nuevos) y "Eliminar cuenta" al final (estilo destructivo).
+- **Login:** texto "Al continuar aceptas los Términos y la Política de privacidad" con ambos enlaces.
+  Se registra `acceptedTermsAt` + `termsVersion` en `users/{uid}` solo en cuentas nuevas. Robustez
+  (Ley 1581 art. 17 b): si `ensureUserDoc` falla al registrarse se reintenta una vez y se registra el
+  error (`console.error('[consent]...')`); en cada ingreso `ensureConsentProof` escribe la aceptación si
+  falta y la cuenta se creó (metadata.creationTime) desde `TERMS_EFFECTIVE_DATE`. Las cuentas anteriores
+  (el dueño) quedan sin aceptación, decisión sin cambios. En el reintento del registro NO se reescribe
+  `acceptedTermsAt`: se llama `ensureUserDoc(user, name, false)` y luego `ensureConsentProof(user)`. No cubre el reinicio de la app con sesión ya
+  abierta (solo ingresos).
+- **Estadísticas de uso (opt-out):** Perfil -> "Privacidad" -> "Compartir estadísticas de uso" (default
+  activado), guardado en `users/{uid}.analyticsEnabled`; `AuthProvider` escucha ese doc y llama
+  `setAnalyticsEnabled` (-> `setAnalyticsCollectionEnabled`) al iniciar sesión y al cambiar; apagado, no
+  se registra ningún evento (ni `logEvent` ni `setPetSpecies`). **Sin consentimiento previo no se recolecta:**
+  `services/analytics.js` arranca apagado (`collectionEnabled=false`), `AuthProvider` lo apaga sin sesión
+  (también tras cerrar sesión) y lo enciende con sesión según la preferencia. `onboarding_completed`, `sign_up` y
+  `login` (ocurren antes de que la recolección esté activa) van a una cola en memoria que se envía al activarse y
+  se descarta si se apaga. `saveAnalyticsPreference` en `services/auth.js`.
+- **Sin ID de publicidad / sin backup:** `firebase.json` (`react-native`: `analytics_auto_collection_enabled` false, adid y consentimientos de
+  publicidad en false, `messaging_auto_init_enabled` false), `app.json` (`allowBackup:false`,
+  `blockedPermissions`: AD_ID, ACCESS_ADSERVICES_*, SYSTEM_ALERT_WINDOW, READ/WRITE_EXTERNAL_STORAGE).
+  **Solo surten efecto en el próximo rebuild nativo** (`expo prebuild` / build de release); el `android/`
+  actual no cambia hasta entonces. Pendiente de verificar en el rebuild: que bloquear SYSTEM_ALERT_WINDOW
+  no rompa el menú de desarrollo en debug (si lo rompe, quitarlo de `blockedPermissions`).
+  **`android/` está desactualizado** (allowBackup, blockedPermissions y las flags nativas de `firebase.json` solo
+  se aplican al regenerarlo): antes del build de release correr `npx expo prebuild --platform android`
+  (respaldar `android/local.properties` antes y restaurarlo después: el prebuild lo borra) y verificar en el
+  manifiesto fusionado que `allowBackup="false"` y que `AD_ID` ya no aparece. NO se ha ejecutado.
+- **`firestore.rules` (cambio local, PENDIENTE DE DESPLEGAR):** `users/{uid}` permite `read, create,
+  delete` al dueño y `update` solo si `acceptedTermsAt` no existía o `acceptedTermsAt`/`termsVersion`
+  no cambian (la prueba de aceptación no se puede reescribir); en `create` y en la primera escritura de
+  `acceptedTermsAt`, si el campo viene debe ser `== request.time` (`serverTimestamp()`). Futuras re-aceptaciones
+  (nueva `TERMS_VERSION`) van a `users/{uid}/consents/{version}` (subcolección del dueño, ya permitida por
+  `{sub}/{docId}`), no sobrescribiendo `acceptedTermsAt`. Desplegar con `firebase deploy --only
+  firestore:rules` cuando el dueño lo decida; hasta entonces la regla en producción sigue siendo la vieja.
+- **Flujo de eliminación** (`services/accountDeletion.js`, `components/perfil/DeleteAccountModal.jsx`):
+  Alert 1 (qué se borra) -> modal (escribir ELIMINAR; contraseña si es cuenta de correo) -> servicio:
+  1) reautenticar PRIMERO (correo: siempre; Google: si el ingreso tiene >4 min), si falla/cancela no se borra
+  nada; 2) `account_deleted`; 3) `clearAllReminders()`; 4) por cada mascota: vacunas, pesos, medicinas (lotes
+  <= 500, con reintento doc a doc) y luego el documento; `users/{uid}/savedTips` y `users/{uid}`; 5)
+  `deleteUser` + cierre de sesión de Google. El guard del root layout lleva al login al caerse la sesión.
+  Las reglas de `firestore.rules` ya permiten todos esos borrados (sin cambios).
+- **Pruebas:** `legal-build`, `accountDeletion`, `legal-flow`, `consent`, `analytics-optout`, `reminders-clear` (Jest) y
+  `.maestro/perfil-legal.yaml` (cancela en el primer aviso; NUNCA confirmar en el dispositivo real).
+
+### Formulario "Seguridad de los datos" de Google Play (respuestas)
+
+Debe coincidir con la política. Recoge datos; cifrado en tránsito: **sí**; el usuario puede pedir
+borrado: **sí** (en la app y en `https://patitas-alejocarmona.web.app/eliminar-cuenta`); sin anuncios.
+
+| Tipo de dato | Recopilado | Compartido | Finalidad | Opcional |
+|---|---|---|---|---|
+| Nombre | Sí | No (Google = encargado) | Gestión de la cuenta | No |
+| Correo electrónico | Sí | No | Gestión de la cuenta | No |
+| ID de usuario | Sí | No | Gestión de la cuenta | No |
+| Ubicación aproximada y precisa | Sí | Sí, con Google Places (responsable independiente) | Funcionalidad de la app (veterinarias cercanas); efímera, no se guarda en cuenta | Sí (permiso) |
+| Interacciones con la app | Sí | No | Estadísticas (Analytics) | Sí (interruptor en Perfil) |
+| Otro contenido generado por el usuario (cartilla, notas) | Sí | No | Funcionalidad de la app | No |
+| ID de dispositivo u otros | Sí | No | Estadísticas (Analytics) | Sí (interruptor en Perfil) |
+| Información de salud del usuario | **No** (la salud de la mascota no es del usuario) | - | - | - |
+| ID de publicidad | **No** (tras el rebuild con B1: AD_ID bloqueado) | - | - | - |
 
 ---
 
@@ -652,6 +746,8 @@ Antes de dar por buena cualquier versión, correr las 3 capas:
    `https://github.com/mobile-dev-inc/maestro/releases/latest/download/maestro.zip`,
    descomprimir, añadir `maestroin` al PATH; requiere Java 17+ y adb.
    En debug, el toast "Open debugger to view warnings" puede tapar la barra inferior.
+
+   Legal: `__tests__/legal-build.test.js`, `accountDeletion.test.js`, `legal-flow.test.js` (Perfil: enlaces, flujo de eliminar con cancelar/confirmar/error), `consent.test.js` (aceptación al registrarse), `reminders-clear.test.js`; E2E `.maestro/perfil-legal.yaml` (solo abre el diálogo y cancela).
 
 4. **Prueba real de notificación en el dispositivo** (al tocar recordatorios): crear una medicina con la
    primera toma a 2-3 min, esperar (la alarma es inexacta: puede tardar ~2-3 min más), verificar con

@@ -57,6 +57,7 @@ jest.mock('../services/firestore', () => ({
   updatePet: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('../services/auth', () => ({ signOut: jest.fn(() => Promise.resolve()), logout: jest.fn(() => Promise.resolve()) }));
+jest.mock('../services/accountDeletion', () => ({ deleteAccount: jest.fn(() => Promise.resolve()) }));
 jest.mock('../services/analytics', () => ({
   track: {
     vaccineAdded: jest.fn(),
