@@ -58,6 +58,8 @@ const render = (initialUrl) => renderRouter(routes.build(), { initialUrl });
 const press = async (el) => { await fireEvent.press(el); };
 
 describe('navegación del Moto (regresión)', () => {
+  // La primera prueba paga el arranque en frío del router (~5 s en máquina cargada).
+  jest.setTimeout(20000);
   beforeEach(() => jest.clearAllMocks());
 
   test('Inicio: "Editar" abre /edit-pet', async () => {

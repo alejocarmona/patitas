@@ -7,7 +7,7 @@
 <meta name="description" content="Términos y condiciones de uso de Patitas.">
 <link rel="canonical" href="https://patitas-alejocarmona.web.app/terminos">
 <style>
-  :root { --primary:#E5521A; --text:#1A1A2E; --muted:#6a6a85; --bg:#FDF6F0; --border:#F0E8E0; }
+  :root { --primary:#C2410C; --text:#1A1A2E; --muted:#6a6a85; --bg:#FDF6F0; --border:#F0E8E0; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
   header { background:#fff; border-bottom:1px solid var(--border); }
@@ -24,10 +24,13 @@
   p, ul { margin:10px 0; }
   li { margin:4px 0; }
   a { color:var(--primary); }
+  .to-top { position:fixed; right:16px; bottom:20px; display:flex; align-items:center; gap:6px; min-height:48px; padding:0 18px; border-radius:24px; background:var(--primary); color:#fff; font-weight:700; font-size:15px; text-decoration:none; box-shadow:0 4px 14px rgba(26,26,46,.25); opacity:0; visibility:hidden; transform:translateY(8px); transition:opacity .2s, transform .2s, visibility .2s; }
+  .to-top.show { opacity:1; visibility:visible; transform:none; }
+  @media (prefers-reduced-motion: reduce) { .to-top { transition:none; } }
   footer { border-top:1px solid var(--border); color:var(--muted); font-size:14px; padding-top:18px; padding-bottom:28px; }
 </style>
 </head>
-<body>
+<body id="top">
 <header>
   <div class="wrap">
     <a class="brand" href="/">🐾 Patitas</a>
@@ -79,5 +82,16 @@
 <footer class="wrap">
   Patitas · Alejandro Carmona · Medellín, Colombia · iaentupocket+patitas@gmail.com
 </footer>
+<a class="to-top" href="#top" aria-label="Ir arriba">↑ Arriba</a>
+<script>
+  (function () {
+    var b = document.querySelector('.to-top');
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function sync() { b.classList.toggle('show', window.scrollY > 600); }
+    window.addEventListener('scroll', sync, { passive: true });
+    sync();
+    b.addEventListener('click', function (e) { e.preventDefault(); window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); });
+  })();
+</script>
 </body>
 </html>

@@ -9,6 +9,8 @@ export const AVATARS = [
   { id: 'conejo-2', species: 'Conejo', source: require('../assets/avatars/conejo-2.png') },
   { id: 'ave-1', species: 'Ave', source: require('../assets/avatars/ave-1.png') },
   { id: 'ave-2', species: 'Ave', source: require('../assets/avatars/ave-2.png') },
+  { id: 'hamster-1', species: 'Hámster', source: require('../assets/avatars/hamster-1.png') },
+  { id: 'cerdo-1', species: 'Cerdo', source: require('../assets/avatars/cerdo-1.png') },
 ];
 
 export function getAvatar(id) {

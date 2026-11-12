@@ -25,6 +25,8 @@ export const VACUNAS = {
   Gato: ['Triple felina', 'Panleucopenia', 'Rinotraqueítis', 'Calicivirus', 'Antirrábica', 'Leucemia felina', 'Otra'],
   Conejo: ['Mixomatosis', 'Enfermedad hemorrágica', 'Otra'],
   Ave: ['Newcastle', 'Poxvirus', 'Otra'],
+  Hámster: ['Otra'],
+  Cerdo: ['Peste porcina clásica', 'Otra'],
   Otro: ['Otra'],
 };
 

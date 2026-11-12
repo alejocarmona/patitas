@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import Button from '../ui/Button';
 import ChoiceChips from '../ui/ChoiceChips';
 import DateField from '../ui/DateField';
@@ -9,14 +9,22 @@ import { AVATARS } from '../../constants/avatars';
 import { fonts, theme } from '../../constants/theme';
 import { parseLocalDate, startOfDay } from '../../utils/vacunaStatus';
 
-const SPECIES = ['Perro', 'Gato', 'Conejo', 'Ave', 'Otro'];
+const SPECIES = ['Perro', 'Gato', 'Conejo', 'Ave', 'Hámster', 'Cerdo', 'Otro'];
+
+// Grilla de avatares: 5 por fila, 2 filas completas (sin huecos).
+const AVATAR_COLS = 5;
+const AVATAR_GAP = 8;
 
 // 'perro-1' -> 'Perro 1' (etiqueta legible para lectores de pantalla)
-const avatarLabel = (a) => String(a.id).replace('-', ' ');
+const avatarLabel = (a) => `${a.species} ${String(a.id).split('-')[1] ?? ''}`.trim();
 
 // Formulario compartido: crear mascota (onboarding) y editar.
 // initial: { name, species, breed, gender, birthdate, avatarId } | undefined
 export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, submitting = false }) {
+  const { width: screenW } = useWindowDimensions();
+  // Ancho útil = pantalla - padding horizontal (20 + 20); cada celda incluye borde 3 + padding 2 por lado.
+  const cell = Math.floor((screenW - 40 - AVATAR_GAP * (AVATAR_COLS - 1)) / AVATAR_COLS);
+  const avatarSize = cell - 10;
   const [form, setForm] = useState(
     initial ?? { name: '', species: 'Gato', breed: '', birthdate: '', gender: 'Hembra', avatarId: 'gato-1' }
   );
@@ -56,7 +64,7 @@ export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, s
             <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 }}>
               Elige su avatar
             </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: AVATAR_GAP }}>
               {AVATARS.map((a) => {
                 const on = form.avatarId === a.id;
                 return (
@@ -65,13 +73,15 @@ export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, s
                     onPress={() => setForm((f) => ({ ...f, avatarId: a.id, species: a.species }))}
                     accessibilityLabel={`Avatar ${avatarLabel(a)}`}
                     style={{
-                      borderRadius: 22,
+                      width: cell,
+                      height: cell,
+                      borderRadius: Math.round(cell * 0.3),
                       borderWidth: 3,
                       borderColor: on ? theme.secondary : 'transparent',
                       padding: 2,
                     }}
                   >
-                    <Image source={a.source} style={{ width: 68, height: 68, borderRadius: 18 }} />
+                    <Image source={a.source} style={{ width: avatarSize, height: avatarSize, borderRadius: Math.round(avatarSize * 0.25) }} />
                   </Pressable>
                 );
               })}
