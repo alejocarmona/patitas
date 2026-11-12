@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfil del usuario y sus subcolecciones (savedTips, tipLikes): solo el dueño
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /{sub}/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Mascotas: en create no existe resource.data, se valida el documento entrante
+    match /pets/{petId} {
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      // update: solo el dueño, y sin poder transferir la mascota a otro userId
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+
+      // Las subcolecciones NO heredan permisos: se verifica la propiedad con get()
+      match /vacunas/{id} {
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/pets/$(petId)).data.userId == request.auth.uid;
+      }
+      match /pesos/{id} {
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/pets/$(petId)).data.userId == request.auth.uid;
+      }
+      match /medicinas/{id} {
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/pets/$(petId)).data.userId == request.auth.uid;
+      }
+    }
+
+    // Tips: lectura para usuarios autenticados; escritura solo por Firebase Console
+    match /tips/{tipId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

@@ -1,0 +1,39 @@
+# Mejora 4: medicina con frecuencia estructurada (cada 8 horas) + recordatorios.
+# Requiere sesión iniciada. Si el permiso de notificaciones aún no está concedido, acepta el diálogo.
+appId: com.alejocarmona.patitas
+---
+- launchApp:
+    clearState: false
+    stopApp: true
+- tapOn: "Cartilla"
+- tapOn: "Medicinas"
+- tapOn: "Agregar medicina"
+- assertVisible: "Se da cada"
+- assertVisible: "Recordarme cada toma"
+- tapOn: "Ej: Amoxicilina"
+- inputText: "Amoxicilina"
+- tapOn: "Ej: 1 tableta, 2 ml"
+- inputText: "1 tableta"
+- hideKeyboard
+# Frecuencia por defecto: cada 8 horas, primera toma 08:00
+- scrollUntilVisible:
+    element: "Guardar medicina"
+- tapOn: "Guardar medicina"
+# Primera vez: texto previo de Patitas y luego el diálogo del sistema (ambos opcionales)
+- tapOn:
+    text: "Continuar"
+    optional: true
+- tapOn:
+    text: "(?i)permitir|allow"
+    optional: true
+- extendedWaitUntil:
+    visible: "Cartilla digital"
+    timeout: 10000
+- assertVisible: "Amoxicilina"
+- assertVisible: ".*Cada 8 horas desde las 08:00.*"
+# Limpieza: borra SOLO la medicina de prueba (la cartilla real tiene más datos)
+- tapOn:
+    text: "Eliminar"
+    below: "Amoxicilina"
+- tapOn: "Eliminar"
+- assertNotVisible: "Amoxicilina"

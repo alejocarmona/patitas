@@ -1,0 +1,33 @@
+# Mejoras 1 y 2: vacuna SIN próxima dosis -> queda "Completa". La fecha de aplicación trae hoy por defecto.
+# Requiere sesión iniciada. No toca las vacunas existentes: crea y borra solo "Panleucopenia".
+appId: com.alejocarmona.patitas
+---
+- launchApp:
+    clearState: false
+    stopApp: true
+- tapOn: "Cartilla"
+- assertVisible: "Cartilla digital"
+- tapOn: "Agregar vacuna"
+- assertVisible: "Guardar vacuna"
+- assertVisible: "¿Cuándo se la pusieron a .*"
+- assertVisible: "Próxima dosis.*opcional.*"
+- tapOn: "Panleucopenia"
+# La próxima dosis NO se toca: debe poder guardarse vacía
+- scrollUntilVisible:
+    element: "Guardar vacuna"
+- tapOn: "Guardar vacuna"
+- extendedWaitUntil:
+    visible: "Cartilla digital"
+    timeout: 10000
+- assertVisible: "Panleucopenia"
+- assertVisible: "Completa"
+# Limpieza: borra SOLO la vacuna de prueba (la cartilla real tiene más datos)
+- scrollUntilVisible:
+    element:
+      text: "Eliminar"
+      below: "Panleucopenia"
+- tapOn:
+    text: "Eliminar"
+    below: "Panleucopenia"
+- tapOn: "Eliminar"
+- assertNotVisible: "Panleucopenia"

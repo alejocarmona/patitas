@@ -1,0 +1,33 @@
+# Formularios: calendario nativo visible, teclado que no tapa campos, barra inferior con margen.
+appId: com.alejocarmona.patitas
+---
+- launchApp:
+    clearState: false
+    stopApp: true
+- takeScreenshot: 01-inicio-barra-inferior
+- tapOn: "Editar"
+- assertVisible: "Fecha de nacimiento"
+- tapOn: "Fecha de nacimiento"
+# El calendario nativo de Android (Material) trae el botón OK/Aceptar
+- assertVisible:
+    text: "(?i)aceptar|ok"
+- takeScreenshot: 02-calendario-nacimiento
+- tapOn: "(?i)cancelar"
+- tapOn: "Criolla"
+- takeScreenshot: 03-teclado-campo-visible
+- hideKeyboard
+- back
+# En debug, el toast "Open debugger to view warnings" puede tapar la barra: esperar
+- waitForAnimationToEnd:
+    timeout: 6000
+- tapOn: "Cartilla"
+- scrollUntilVisible:
+    element: "Agregar vacuna"
+- scroll
+- tapOn: "Agregar vacuna"
+- tapOn: "Otra"
+- tapOn: "Nombre de la vacuna"
+- takeScreenshot: 04-teclado-add-vacuna
+- hideKeyboard
+- back
+- assertVisible: "Cartilla digital"

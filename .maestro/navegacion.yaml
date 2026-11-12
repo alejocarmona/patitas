@@ -1,0 +1,42 @@
+# Navegación completa (app ya con sesión iniciada y mascota). Regresión de:
+# Editar/Perfil no abrían, Agregar vacuna iba a Inicio, y el guardado no volvía a Cartilla.
+appId: com.alejocarmona.patitas
+---
+- launchApp:
+    clearState: false
+    stopApp: true
+- assertVisible: "Editar"
+- tapOn: "Editar"
+- assertVisible: "Guardar cambios"
+- back
+- assertVisible: "Editar"
+- tapOn:
+    id: "perfil-btn"
+- assertVisible: "Mi perfil"
+- back
+- assertVisible: "Editar"
+- tapOn: "Cartilla"
+- assertVisible: "Cartilla digital"
+- tapOn: "Agregar vacuna"
+- assertVisible: "Guardar vacuna"
+- tapOn: "Panleucopenia"
+- tapOn: "¿Cuándo se la pusieron a .*"
+- tapOn: "(?i)aceptar|ok"
+- tapOn: "Próxima dosis.*"
+- tapOn: "(?i)aceptar|ok"
+- tapOn: "Guardar vacuna"
+- extendedWaitUntil:
+    visible: "Cartilla digital"
+    timeout: 10000
+- assertVisible: "Panleucopenia"
+- assertVisible: "Eliminar"
+# Limpieza: borra SOLO la vacuna de prueba (la cartilla real tiene más datos)
+- scrollUntilVisible:
+    element:
+      text: "Eliminar"
+      below: "Panleucopenia"
+- tapOn:
+    text: "Eliminar"
+    below: "Panleucopenia"
+- tapOn: "Eliminar"
+- assertNotVisible: "Panleucopenia"
