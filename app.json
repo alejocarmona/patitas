@@ -9,6 +9,7 @@
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.alejocarmona.patitas",
+      "versionCode": 2,
       "allowBackup": false,
       "blockedPermissions": [
         "com.google.android.gms.permission.AD_ID",
@@ -73,7 +74,7 @@
     ],
     "extra": {
       "androidCertSha1": "5E8F16062EA3CD2C4A0D547876BAA6F38CABF625",
-      "androidCertSha1Release": "026D40A02372C9E3BCE4702244C704031FE8EA80"
+      "androidCertSha1Release": "388535AC9D0701289EE541078C7522E8D54E3E04"
     }
   }
 }

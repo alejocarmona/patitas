@@ -31,3 +31,7 @@ yarn-error.*
 
 # Caché de deploy de Firebase
 .firebase/
+
+# Material de trabajo de Play Console (no publico)
+store/play-console-paso-a-paso.md
+store/graficos/capturas-originales/
