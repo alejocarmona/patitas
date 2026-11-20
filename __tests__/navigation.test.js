@@ -15,7 +15,8 @@ const mockPet = {
 jest.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ user: { uid: 'u1', displayName: 'Alejo C' }, pet: mockPet, onboardingSeen: true, loading: false }),
 }));
-jest.mock('../hooks/usePet', () => ({ usePet: () => mockPet }));
+jest.mock('../hooks/usePet', () => ({ usePet: () => mockPet, usePets: () => require('../test-helpers/petsMock').petsHook(mockPet) }));
+jest.mock('../hooks/useAllPetsCartilla', () => require('../test-helpers/petsMock').allPetsCartillaEmpty());
 jest.mock('../hooks/useVacunas', () => ({ useVacunas: () => require('../test-helpers/vacunasMock').hookResult([]) }));
 jest.mock('../hooks/usePeso', () => ({ usePeso: () => ({ pesos: [], loading: false }) }));
 jest.mock('../hooks/useMedicinas', () => ({ useMedicinas: () => ({ medicinas: [], loading: false }) }));

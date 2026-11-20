@@ -728,8 +728,13 @@ Tests: `jest-expo` + `jest`; `npm test`.
    son las de producción desde el primer despliegue
 9. `.env` y `google-services.json` en `.gitignore` desde el primer commit
 10. Tips se cargan desde Firestore — no están hardcodeados en el código
-11. Un solo pet por usuario en MVP — la query es:
-    `where('userId', '==', uid).limit(1)`
+11. Varias mascotas por usuario (v1.1). `AuthProvider` escucha TODAS
+    (`where('userId', '==', uid)`, orden por `createdAt` en el cliente con `utils/pets.js`) y expone `pet` (la
+    seleccionada, guardada en AsyncStorage `selectedPet.v1:<uid>`), `pets`, `selectPet` y `maxPets`. Todas las pantallas
+    de la cartilla trabajan sobre `usePet()` = la seleccionada. Los recordatorios se sincronizan con las de TODAS
+    (`useAllPetsCartilla` + `syncAll({ groups })`): nunca llamar `syncAll` con solo la visible, porque cancela lo demás.
+    Tope de mascotas gratis: `config/app.maxPetsFree` en Firestore (sin documento = sin tope; hoy NO existe). Sin
+    paywall ni mención de premium en esta versión.
 12. Sin premium, precios ni la palabra "gratis" en ninguna pantalla
 13. RNFirebase no funciona en Expo Go: siempre development build
     (`npx expo run:android`)

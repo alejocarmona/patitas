@@ -24,7 +24,9 @@ import { deleteAuthUser, hasRecentLogin, reauthenticate } from './auth';
 import { authProviderOf } from '../utils/authProvider';
 
 export const BATCH_SIZE = 500;
-export const PET_SUBCOLLECTIONS = ['vacunas', 'pesos', 'medicinas'];
+import { PET_SUBCOLLECTIONS } from '../utils/pets';
+
+export { PET_SUBCOLLECTIONS };
 export const USER_SUBCOLLECTIONS = ['savedTips'];
 
 // Borra refs en lotes de <= 500. Si un lote falla (p. ej. por el tope de lecturas de las reglas

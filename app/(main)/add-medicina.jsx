@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, AppState, KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import TopBar from '../../components/ui/TopBar';
 import StatusBarCover from '../../components/ui/StatusBarCover';
@@ -15,7 +15,7 @@ import { useClearErrorsWhenValid, useDirty, useDiscardGuard, useScrollToError } 
 import { addCartillaItem, updateCartillaItem } from '../../services/firestore';
 import { track } from '../../services/analytics';
 import { getPermissionStatus, syncMedicina } from '../../services/reminders';
-import { ensureReminderPermission } from '../../services/reminderPrompt';
+import { ensureReminderPermission, openNotificationSettings } from '../../services/reminderPrompt';
 import { daysUntil, isValidDateString, toDateString } from '../../utils/vacunaStatus';
 import { endDateFromDuration, formatFrequency, hasStructuredSchedule, isValidTime, scheduleSummary } from '../../utils/reminders';
 
@@ -47,6 +47,11 @@ export default function AddMedicina() {
 
   useEffect(() => {
     getPermissionStatus().then(setPermission).catch(() => {});
+    // Al volver de Ajustes (activó las notificaciones), se refleja sin salir del formulario
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') getPermissionStatus().then(setPermission).catch(() => {});
+    });
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {
@@ -143,7 +148,7 @@ export default function AddMedicina() {
       }
       if (itemId) {
         // Sin permiso, `syncMedicina` no programa nada (y cancela lo previo del ítem)
-        await syncMedicina(pet.name, { ...data, id: itemId, active: editing ? editing.active !== false : true }).catch(() => {});
+        await syncMedicina(pet.name, { ...data, id: itemId, active: editing ? editing.active !== false : true }, { petId: pet.id }).catch(() => {});
       }
       if (reminders && granted && !(editing && editing.reminders)) track.reminderEnabled('medicine');
       allowLeave();
@@ -239,9 +244,22 @@ export default function AddMedicina() {
               />
             </Pressable>
             {reminders && permission === 'denied' ? (
-              <Text style={{ fontSize: 13, fontFamily: fonts.medium, color: theme.danger }}>
-                Los recordatorios están apagados: las notificaciones de Patitas están bloqueadas en tu teléfono. La medicina se guarda igual.
-              </Text>
+              <View style={{ gap: 6 }}>
+                <Text style={{ fontSize: 13, fontFamily: fonts.medium, color: theme.danger }}>
+                  Los recordatorios están apagados: las notificaciones de Patitas están bloqueadas en tu teléfono. La medicina se guarda igual.
+                </Text>
+                <Pressable
+                  testID="abrir-ajustes-notificaciones"
+                  accessibilityRole="button"
+                  onPress={openNotificationSettings}
+                  hitSlop={8}
+                  style={{ minHeight: 44, justifyContent: 'center' }}
+                >
+                  <Text style={{ fontSize: 14, fontFamily: fonts.bold, color: theme.secondary, textDecorationLine: 'underline' }}>
+                    Abrir ajustes para activarlas
+                  </Text>
+                </Pressable>
+              </View>
             ) : null}
           </View>
           <Field label="Notas (opcional)" value={notes} onChangeText={setNotes} placeholder="Indicaciones del veterinario..." multiline maxLength={300} />

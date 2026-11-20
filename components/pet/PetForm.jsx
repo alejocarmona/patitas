@@ -20,7 +20,7 @@ const avatarLabel = (a) => `${a.species} ${String(a.id).split('-')[1] ?? ''}`.tr
 
 // Formulario compartido: crear mascota (onboarding) y editar.
 // initial: { name, species, breed, gender, birthdate, avatarId } | undefined
-export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, submitting = false }) {
+export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, submitting = false, footer = null }) {
   const { width: screenW } = useWindowDimensions();
   // Ancho útil = pantalla - padding horizontal (20 + 20); cada celda incluye borde 3 + padding 2 por lado.
   const cell = Math.floor((screenW - 40 - AVATAR_GAP * (AVATAR_COLS - 1)) / AVATAR_COLS);
@@ -57,7 +57,7 @@ export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, s
         <TopBar
           title={isEdit ? `Editar perfil de ${nombre}` : 'Cuéntanos de tu mascota'}
           subtitle={isEdit ? 'Actualiza los datos cuando quieras' : 'Así podremos cuidarla mejor juntos 🐾'}
-          onBack={isEdit ? onCancel : undefined}
+          onBack={onCancel}
         />
         <View style={{ paddingHorizontal: 20, paddingTop: 20, gap: 16 }}>
           <View>
@@ -100,6 +100,7 @@ export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, s
             loading={submitting}
           />
           {isEdit && <Button label="Cancelar" onPress={onCancel} variant="outline" color={theme.textMuted} />}
+          {footer}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -4,10 +4,12 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   serverTimestamp,
   updateDoc,
 } from '@react-native-firebase/firestore';
 import { db } from '../firebase';
+import { PET_SUBCOLLECTIONS } from '../utils/pets';
 
 export async function createPet(uid, data) {
   const ref = await addDoc(collection(db(), 'pets'), {
@@ -22,6 +24,16 @@ export async function createPet(uid, data) {
     updatedAt: serverTimestamp(),
   });
   return ref.id;
+}
+
+// Borra una mascota y su cartilla. Los recordatorios se cancelan solos: useReminders deja de
+// recibirla y syncAll cancela lo huérfano.
+export async function deletePet(petId) {
+  for (const sub of PET_SUBCOLLECTIONS) {
+    const snap = await getDocs(collection(db(), 'pets', petId, sub));
+    for (const d of snap.docs) await deleteDoc(d.ref);
+  }
+  await deleteDoc(doc(db(), 'pets', petId));
 }
 
 export function updatePet(petId, data) {

@@ -10,7 +10,8 @@ import { fonts, statusColors, theme } from '../../../constants/theme';
 import { formatKg } from '../../../utils/weight';
 import { useAuth } from '../../../hooks/useAuth';
 import { useMedicinas } from '../../../hooks/useMedicinas';
-import { usePet } from '../../../hooks/usePet';
+import { usePets } from '../../../hooks/usePet';
+import PetSwitcher from '../../../components/pet/PetSwitcher';
 import { usePeso } from '../../../hooks/usePeso';
 import { useVacunas } from '../../../hooks/useVacunas';
 import { track } from '../../../services/analytics';
@@ -23,7 +24,7 @@ function ageLabel(pet) {
 
 export default function Home() {
   const { user } = useAuth();
-  const pet = usePet();
+  const { pet, pets, selectPet, canAdd } = usePets();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { latests, loading: lv } = useVacunas(pet?.id);
@@ -86,6 +87,14 @@ export default function Home() {
             <Feather name="user" size={20} color="#fff" />
           </Pressable>
         </View>
+
+        <PetSwitcher
+          pets={pets}
+          selectedId={pet.id}
+          onSelect={selectPet}
+          onAdd={() => router.push('/agregar-mascota')}
+          canAdd={canAdd}
+        />
 
         <View style={{ marginTop: 20, backgroundColor: 'rgba(0,0,0,0.18)', borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <Image source={getAvatar(pet.avatarId).source} style={{ width: 60, height: 60, borderRadius: 18 }} />

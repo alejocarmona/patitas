@@ -18,7 +18,25 @@ const mockPick = { date: new Date(2026, 10, 11) };
 jest.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ user: { uid: 'u1', displayName: 'Alejo C' }, pet: mockPet, onboardingSeen: true, loading: false }),
 }));
-jest.mock('../hooks/usePet', () => ({ usePet: () => mockPet }));
+jest.mock('../hooks/usePet', () => ({ usePet: () => mockPet, usePets: () => require('../test-helpers/petsMock').petsHook(mockPet) }));
+jest.mock('../hooks/useAllPetsCartilla', () => {
+  const React = require('react');
+  return {
+    useAllPetsCartilla: (petIds) => {
+      const [, force] = React.useReducer((x) => x + 1, 0);
+      React.useEffect(() => {
+        mockStore.listeners.add(force);
+        return () => mockStore.listeners.delete(force);
+      }, []);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const data = React.useMemo(
+        () => Object.fromEntries(petIds.map((id) => [id, { vacunas: [...mockStore.data.vacunas], medicinas: [...mockStore.data.medicinas] }])),
+        [mockStore.version, petIds.join('|')]
+      );
+      return { data, ready: true };
+    },
+  };
+});
 jest.mock('../hooks/useSubcollection', () => {
   const React = require('react');
   return {
@@ -202,7 +220,7 @@ describe('Mejora 4: recordatorios de medicinas', () => {
     const first = Notifications.scheduleNotificationAsync.mock.calls[0][0];
     expect(first.content.title).toBe('Hora de la medicina de Lirya');
     expect(first.content.body).toBe('Amoxicilina, 1 tableta');
-    expect(first.content.data).toEqual({ tab: 'medicinas' });
+    expect(first.content.data).toEqual({ tab: 'medicinas', petId: 'pet1' });
     expect(first.trigger.channelId).toBe('recordatorios');
     expect(track.reminderEnabled).toHaveBeenCalledWith('medicine');
     await waitFor(() => expect(screen).toHavePathname('/cartilla'));
@@ -233,6 +251,27 @@ describe('Mejora 4: recordatorios de medicinas', () => {
     expect(Alert.alert.mock.calls[0][0]).toBe('Recordatorios para Lirya');
     expect(track.notificationPermission).toHaveBeenCalledWith(true);
     await waitFor(() => expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled());
+  });
+
+  test('Android sin preguntar aún (status denied + canAskAgain): SÍ pide el permiso (antes se daba por bloqueado)', async () => {
+    Notifications.__state.permission = { granted: false, status: 'denied', canAskAgain: true };
+    await render('/add-medicina');
+    await fireEvent.changeText(screen.getByPlaceholderText('Ej: Amoxicilina'), 'Amoxicilina');
+    await fireEvent.changeText(screen.getByPlaceholderText('Ej: 1 tableta, 2 ml'), '1 tableta');
+    expect(screen.queryByText(/Los recordatorios están apagados/)).toBeNull();
+    await press(screen.getByText('Guardar medicina'));
+    await waitFor(() => expect(Notifications.requestPermissionsAsync).toHaveBeenCalledTimes(1));
+    expect(Alert.alert.mock.calls[0][0]).toBe('Recordatorios para Lirya');
+  });
+
+  test('bloqueado de verdad: el aviso trae "Abrir ajustes" y abre los ajustes de la app', async () => {
+    const { Linking } = require('react-native');
+    const spy = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
+    Notifications.__state.permission = { granted: false, status: 'denied', canAskAgain: false };
+    await render('/add-medicina');
+    await press(await screen.findByTestId('abrir-ajustes-notificaciones'));
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 
   test('medicina vieja (solo frequency de texto libre): se muestra tal cual y no programa recordatorios', async () => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import TopBar from '../../components/ui/TopBar';
@@ -11,6 +11,8 @@ import { CONTACT_EMAIL, URL_PRIVACIDAD, URL_TERMINOS } from '../../constants/leg
 import { contactUrl } from '../../utils/contact';
 import { track } from '../../services/analytics';
 import { useAuth } from '../../hooks/useAuth';
+import { usePets } from '../../hooks/usePet';
+import { getAvatar } from '../../constants/avatars';
 import { authErrorMessage, saveAnalyticsPreference, signOut } from '../../services/auth';
 import { authProviderOf } from '../../utils/authProvider';
 import { deleteAccount } from '../../services/accountDeletion';
@@ -42,7 +44,8 @@ async function openContact() {
 }
 
 export default function Perfil() {
-  const { user, pet, analyticsEnabled } = useAuth();
+  const { user, analyticsEnabled } = useAuth();
+  const { pets, pet, selectPet, canAdd } = usePets();
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -73,7 +76,7 @@ export default function Perfil() {
   const startDelete = () =>
     Alert.alert(
       '¿Eliminar tu cuenta?',
-      'Es permanente y no se puede deshacer. Vamos a borrar tu cuenta, el perfil de tu mascota, toda su cartilla (vacunas, pesos y medicinas), tus tips guardados y tus recordatorios.',
+      'Es permanente y no se puede deshacer. Vamos a borrar tu cuenta, el perfil de tus mascotas, toda su cartilla (vacunas, pesos y medicinas), tus tips guardados y tus recordatorios.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -105,7 +108,7 @@ export default function Perfil() {
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <TopBar
         title="Mi perfil"
-        subtitle="Tu cuenta y la de tu mascota"
+        subtitle="Tu cuenta y tus mascotas"
         onBack={() => (router.canGoBack() ? router.back() : router.replace('/home'))}
       />
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
@@ -114,7 +117,36 @@ export default function Perfil() {
           <Text style={{ fontSize: 16, fontFamily: fonts.extrabold, color: theme.text }}>{user?.displayName || 'Sin nombre'}</Text>
           <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: theme.textMuted }}>{user?.email}</Text>
         </Card>
-        {pet ? <Button label={`Editar perfil de ${pet.name}`} onPress={() => router.push('/edit-pet')} variant="outline" color={theme.secondary} /> : null}
+        <Card style={{ gap: 4 }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, textTransform: 'uppercase' }}>
+            {pets.length > 1 ? 'Mis mascotas' : 'Mi mascota'}
+          </Text>
+          {pets.map((p) => (
+            <Pressable
+              key={p.id}
+              testID={`perfil-pet-${p.id}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Editar perfil de ${p.name}`}
+              onPress={() => {
+                selectPet(p.id);
+                router.push('/edit-pet');
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56 }}
+            >
+              <Image source={getAvatar(p.avatarId).source} style={{ width: 40, height: 40, borderRadius: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontFamily: fonts.bold, color: theme.text }}>{p.name}</Text>
+                {pets.length > 1 && p.id === pet?.id ? (
+                  <Text style={{ fontSize: 12, fontFamily: fonts.semibold, color: theme.textMuted }}>La que estás viendo</Text>
+                ) : null}
+              </View>
+              <Feather name="edit-2" size={16} color={theme.textMuted} />
+            </Pressable>
+          ))}
+        </Card>
+        {canAdd ? (
+          <Button label="Agregar mascota" onPress={() => router.push('/agregar-mascota')} variant="outline" color={theme.secondary} />
+        ) : null}
         <Button label="Cerrar sesión" onPress={confirmSignOut} variant="outline" color={theme.text} />
 
         <Card style={{ gap: 6 }}>

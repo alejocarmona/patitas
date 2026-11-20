@@ -48,6 +48,12 @@ service cloud.firestore {
       }
     }
 
+    // Configuración de la app (p. ej. config/app.maxPetsFree): solo lectura; se edita desde la consola
+    match /config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     // Tips: lectura para usuarios autenticados; escritura solo por Firebase Console
     match /tips/{tipId} {
       allow read: if request.auth != null;

@@ -62,11 +62,15 @@ export async function initNotifications() {
 }
 
 // 'granted' | 'denied' | 'undetermined'
+// En Android, antes de pedirlo por primera vez Expo responde status 'denied' con canAskAgain true
+// (no existe "sin decidir"). Por eso se decide por canAskAgain: solo es 'denied' cuando el sistema
+// ya no deja volver a preguntar (el usuario lo negó). Antes se leía 'denied' y nunca se pedía.
 export async function getPermissionStatus() {
   try {
     const p = await Notifications.getPermissionsAsync();
     if (p.granted) return 'granted';
-    return p.status === 'undetermined' ? 'undetermined' : 'denied';
+    if (p.status === 'undetermined' || p.canAskAgain !== false) return 'undetermined';
+    return 'denied';
   } catch {
     return 'undetermined';
   }
@@ -119,7 +123,7 @@ async function apply(store, key, sig, items, { force = false } = {}) {
   store[key] = { sig, ids: await scheduleAll(items) };
 }
 
-function medicineItems(petName, med, now) {
+function medicineItems(petName, med, now, petId) {
   if (!med || med.reminders === false || med.active === false || !hasStructuredSchedule(med)) return [];
   const times = computeDoseTimes(med, now, HORIZON_DAYS).slice(0, MAX_PER_MEDICINE);
   const body = [med.name, med.dose].filter(Boolean).join(', ');
@@ -127,11 +131,11 @@ function medicineItems(petName, med, now) {
     at,
     title: `Hora de la medicina de ${petName}`,
     body,
-    data: { tab: 'medicinas' },
+    data: petId ? { tab: 'medicinas', petId } : { tab: 'medicinas' },
   }));
 }
 
-function vaccineItems(petName, vac, now) {
+function vaccineItems(petName, vac, now, petId) {
   if (!vac?.nextDate) return [];
   return computeVaccineReminderTimes(vac.nextDate, now).map((at) => {
     const sameDay = toDateString(at) === vac.nextDate;
@@ -139,7 +143,7 @@ function vaccineItems(petName, vac, now) {
       at,
       title: sameDay ? `Hoy toca la vacuna de ${petName}` : `${petName} tiene vacuna en 7 días`,
       body: sameDay ? vac.name : `${vac.name} · ${formatDateEs(vac.nextDate)}`,
-      data: { tab: 'vacunas' },
+      data: petId ? { tab: 'vacunas', petId } : { tab: 'vacunas' },
     };
   });
 }
@@ -161,21 +165,21 @@ const medSig = (petName, med, now) =>
 const vacSig = (petName, vac) => JSON.stringify([petName, vac.name, vac.nextDate ?? null]);
 
 // Sincroniza UNA medicina (tras guardar/editar). Sin permiso no programa.
-export function syncMedicina(petName, med, { now = new Date(), force = false } = {}) {
+export function syncMedicina(petName, med, { now = new Date(), force = false, petId } = {}) {
   return serial(async () => {
     const store = await readStore();
     const granted = (await getPermissionStatus()) === 'granted';
-    const items = granted ? medicineItems(petName, med, now) : [];
+    const items = granted ? medicineItems(petName, med, now, petId) : [];
     await apply(store, `medicinas/${med.id}`, medSig(petName, med, now), items, { force });
     await writeStore(store);
   });
 }
 
-export function syncVacuna(petName, vac, { now = new Date(), force = false } = {}) {
+export function syncVacuna(petName, vac, { now = new Date(), force = false, petId } = {}) {
   return serial(async () => {
     const store = await readStore();
     const granted = (await getPermissionStatus()) === 'granted';
-    const items = granted ? vaccineItems(petName, vac, now) : [];
+    const items = granted ? vaccineItems(petName, vac, now, petId) : [];
     await apply(store, `vacunas/${vac.id}`, vacSig(petName, vac), items, { force });
     await writeStore(store);
   });
@@ -193,21 +197,27 @@ export function cancelItem(sub, id) {
 }
 
 // Reconciliación completa contra lo que hay en Firestore: programa/actualiza lo vigente
-// y cancela lo huérfano (ítems borrados desde otro dispositivo, reinstalación, etc.).
-export function syncAll({ petName, medicinas = [], vacunas = [], now = new Date() }) {
+// y cancela lo huérfano (ítems borrados desde otro dispositivo, mascota eliminada, etc.).
+// Con varias mascotas recibe `groups` = [{ petId, petName, medicinas, vacunas }] de TODAS:
+// lo que no venga aquí se cancela, así que nunca se llama con solo la mascota visible.
+// Forma heredada (una mascota): { petName, medicinas, vacunas }.
+export function syncAll({ groups, petName, medicinas = [], vacunas = [], now = new Date() }) {
+  const all = groups ?? [{ petId: undefined, petName, medicinas, vacunas }];
   return serial(async () => {
     const store = await readStore();
     const granted = (await getPermissionStatus()) === 'granted';
     const live = new Set();
-    for (const med of medicinas) {
-      const key = `medicinas/${med.id}`;
-      live.add(key);
-      await apply(store, key, medSig(petName, med, now), granted ? medicineItems(petName, med, now) : []);
-    }
-    for (const vac of vacunas) {
-      const key = `vacunas/${vac.id}`;
-      live.add(key);
-      await apply(store, key, vacSig(petName, vac), granted ? vaccineItems(petName, vac, now) : []);
+    for (const g of all) {
+      for (const med of g.medicinas ?? []) {
+        const key = `medicinas/${med.id}`;
+        live.add(key);
+        await apply(store, key, medSig(g.petName, med, now), granted ? medicineItems(g.petName, med, now, g.petId) : []);
+      }
+      for (const vac of g.vacunas ?? []) {
+        const key = `vacunas/${vac.id}`;
+        live.add(key);
+        await apply(store, key, vacSig(g.petName, vac), granted ? vaccineItems(g.petName, vac, now, g.petId) : []);
+      }
     }
     for (const key of Object.keys(store)) {
       if (!live.has(key)) {

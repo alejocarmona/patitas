@@ -105,7 +105,7 @@ export default function AddVacuna() {
         itemId = ref?.id;
         track.vaccineAdded(getVacunaStatus(data.nextDate));
       }
-      if (itemId) await syncVacuna(pet.name, { ...data, id: itemId }).catch(() => {});
+      if (itemId) await syncVacuna(pet.name, { ...data, id: itemId }, { petId: pet.id }).catch(() => {});
       if (granted && !editing) track.reminderEnabled('vaccine');
       allowLeave();
       router.back();
