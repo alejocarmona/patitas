@@ -32,6 +32,21 @@ function LegalRow({ label, url, testID }) {
   );
 }
 
+// Fila de acción dentro de una tarjeta (mismo patrón que Ayuda y Legal): evita apilar botones a todo el ancho.
+function ActionRow({ icon, label, onPress, color = theme.text, testID }) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52 }}
+    >
+      <Feather name={icon} size={18} color={color} />
+      <Text style={{ flex: 1, fontSize: 15, fontFamily: fonts.semibold, color }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 async function openContact() {
   track.contactOpened();
   try {
@@ -113,11 +128,6 @@ export default function Perfil() {
       />
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
         <Card style={{ gap: 4 }}>
-          <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, textTransform: 'uppercase' }}>Cuenta</Text>
-          <Text style={{ fontSize: 16, fontFamily: fonts.extrabold, color: theme.text }}>{user?.displayName || 'Sin nombre'}</Text>
-          <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: theme.textMuted }}>{user?.email}</Text>
-        </Card>
-        <Card style={{ gap: 4 }}>
           <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, textTransform: 'uppercase' }}>
             {pets.length > 1 ? 'Mis mascotas' : 'Mi mascota'}
           </Text>
@@ -143,11 +153,20 @@ export default function Perfil() {
               <Feather name="edit-2" size={16} color={theme.textMuted} />
             </Pressable>
           ))}
+          {canAdd ? (
+            <>
+              <View style={{ height: 1, backgroundColor: theme.border }} />
+              <ActionRow icon="plus" label="Agregar mascota" color={theme.secondary} onPress={() => router.push('/agregar-mascota')} testID="agregar-mascota" />
+            </>
+          ) : null}
         </Card>
-        {canAdd ? (
-          <Button label="Agregar mascota" onPress={() => router.push('/agregar-mascota')} variant="outline" color={theme.secondary} />
-        ) : null}
-        <Button label="Cerrar sesión" onPress={confirmSignOut} variant="outline" color={theme.text} />
+        <Card style={{ gap: 4 }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, textTransform: 'uppercase' }}>Cuenta</Text>
+          <Text style={{ fontSize: 16, fontFamily: fonts.extrabold, color: theme.text }}>{user?.displayName || 'Sin nombre'}</Text>
+          <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: theme.textMuted }}>{user?.email}</Text>
+          <View style={{ height: 1, backgroundColor: theme.border, marginTop: 8 }} />
+          <ActionRow icon="log-out" label="Cerrar sesión" onPress={confirmSignOut} testID="cerrar-sesion" />
+        </Card>
 
         <Card style={{ gap: 6 }}>
           <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: theme.textMuted, textTransform: 'uppercase' }}>Privacidad</Text>
@@ -194,8 +213,8 @@ export default function Perfil() {
           <LegalRow label="Términos y condiciones" url={URL_TERMINOS} testID="legal-terminos" />
         </Card>
 
-        <View style={{ marginTop: 16 }}>
-          <Button label="Eliminar cuenta" onPress={startDelete} variant="outline" color={theme.danger} />
+        <View style={{ marginTop: 8, alignItems: 'center' }}>
+          <Button label="Eliminar cuenta" onPress={startDelete} variant="text" color={theme.danger} full={false} />
         </View>
       </ScrollView>
 

@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 import { fonts, theme } from '../../constants/theme';
 
-// variant: 'primary' (relleno) | 'outline' | 'danger'
+// variant: 'primary' (relleno) | 'outline' | 'danger' | 'text' (sin borde: acciones secundarias o destructivas poco frecuentes)
 export default function Button({
   label,
   onPress,
@@ -12,7 +12,8 @@ export default function Button({
   full = true,
 }) {
   const base = color ?? (variant === 'danger' ? theme.danger : theme.primaryStrong);
-  const outline = variant === 'outline';
+  const text = variant === 'text';
+  const outline = variant === 'outline' || text;
   const off = disabled || loading;
   return (
     <Pressable
@@ -22,10 +23,11 @@ export default function Button({
       style={({ pressed }) => ({
         width: full ? '100%' : undefined,
         backgroundColor: outline ? 'transparent' : base,
-        borderWidth: 2,
+        borderWidth: text ? 0 : 2,
         borderColor: base,
         borderRadius: 14,
-        paddingVertical: 14,
+        paddingVertical: text ? 12 : 14,
+        minHeight: 48,
         paddingHorizontal: 20,
         alignItems: 'center',
         justifyContent: 'center',

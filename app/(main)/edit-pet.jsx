@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import PetForm from '../../components/pet/PetForm';
 import { usePets } from '../../hooks/usePet';
@@ -58,7 +58,9 @@ export default function EditPet() {
     <PetForm
       footer={
         pets.length > 1 ? (
-          <Button label={`Eliminar a ${pet.name}`} onPress={confirmRemove} loading={removing} variant="outline" color={theme.danger} />
+          <View style={{ marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: theme.border, alignItems: 'center' }}>
+            <Button label={`Eliminar a ${pet.name}`} onPress={confirmRemove} loading={removing} variant="text" color={theme.danger} full={false} />
+          </View>
         ) : null
       }
       isEdit

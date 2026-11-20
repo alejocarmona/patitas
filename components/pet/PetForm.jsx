@@ -99,7 +99,7 @@ export default function PetForm({ initial, isEdit = false, onSubmit, onCancel, s
             onPress={submit}
             loading={submitting}
           />
-          {isEdit && <Button label="Cancelar" onPress={onCancel} variant="outline" color={theme.textMuted} />}
+          {isEdit && <Button label="Cancelar" onPress={onCancel} variant="text" color={theme.textMuted} />}
           {footer}
         </View>
       </ScrollView>
